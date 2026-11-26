@@ -1,0 +1,12 @@
+# Windows / Office scratch files
+~$*
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Document lock directories
+.qoder-office-docx-locks/
