@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+
+# Scratch & Dev artifacts
+scratch/
+Streamlit/assets/
+
+# Next.js / Node
+node_modules/
+.next/
+out/
+build/
+dist/
+.env*.local
+
+# Databases
+*.db
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+.agents/
