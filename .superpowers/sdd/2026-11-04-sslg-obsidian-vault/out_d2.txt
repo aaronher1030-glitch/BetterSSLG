@@ -1,0 +1,22 @@
+D11 probe first row cells: ['[[02 Activities/Brigada Eskwela 2026/Brigada Eskwela 2026.md|Brigada Eskwela 2026]]', '2026-06-01', '2026-06-05', '2026-2027', 'completed', '3', 'Benigno S. Aquino National High School', '']
+D11. Activity Dashboard rows: 16 manifest activities: 16
+  mismatches Records column vs manifest: {}
+  unknown titles in dashboard: []
+  column sum: 31 | records with an activity: 31 | total records: 36
+  start col: ['2026-06-01', '2026-06-01', '2026-06-16', '2026-06-17', '2026-06-24', '2026-07-03', '2026-07-13', '2026-07-22', '2026-08-25', '2026-11-17', 'Not stated in source', 'Not stated in source', 'Not stated in source', 'Not stated in source', 'Not stated in source', 'Not stated in source']
+  sorted with blanks last: True
+  status col: ['completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'ongoing', 'planned', 'needs-review', 'planned', 'ongoing', 'ongoing', 'ongoing', 'needs-review']
+  manifest statuses: ['completed', 'completed', 'completed', 'completed', 'completed', 'completed', 'ongoing', 'ongoing', 'ongoing', 'planned', 'needs-review', 'planned', 'needs-review', 'completed', 'completed', 'ongoing']
+D12. Timeline: activity rows 16 | event rows 20 | issuance rows 22 | no-date bullets 14
+  manifest: activities 16 records w/ event_date 20 w/ date 22 w/o date 14
+  issuance rows + no-date bullets = 36
+D13. schedule sorted: True ['2026-06-01', '2026-06-01', '2026-06-16', '2026-06-17', '2026-06-24', '2026-07-03', '2026-07-13', '2026-07-22', '2026-08-25', '2026-11-17', 'Not stated in source', 'Not stated in source', 'Not stated in source', 'Not stated in source', 'Not stated in source', 'Not stated in source']
+  event dates: ['2026-05-15', '2026-05-16', '2026-05-31', '2026-06-01', '2026-06-05', '2026-06-07', '2026-06-17', '2026-06-24', '2026-06-24', '2026-06-25', '2026-06-25', '2026-07-03', '2026-07-03', '2026-07-13', '2026-07-22', '2026-07-22', '2026-07-31', '2026-08-07', '2026-10-02', '2026-11-17']
+  event sorted: True
+  issuance dates: ['2026-05-14', '2026-05-14', '2026-05-16', '2026-05-25', '2026-05-27', '2026-05-29', '2026-06-05', '2026-06-06', '2026-06-22', '2026-06-23', '2026-06-23', '2026-06-23', '2026-06-25', '2026-07-02', '2026-07-13', '2026-07-28', '2026-08-03', '2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-09-01']
+  issuance sorted: True
+Traceback (most recent call last):
+  File "C:\Users\Ma Christine\Downloads\SSLG MEMOS\.superpowers\sdd\2026-11-04-sslg-obsidian-vault\sdd_final_d2.py", line 70, in <module>
+    ev_l = {NOTE_LINK.search(cells(l)[2]).group(1) for l in er} if er else set()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'group'

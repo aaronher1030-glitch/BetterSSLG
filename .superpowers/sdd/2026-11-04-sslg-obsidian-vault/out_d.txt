@@ -1,0 +1,47 @@
+D1. note_path/hub_path uniqueness
+  record note_paths: 36 distinct: 36 | hubs: 16 distinct: 16
+  duplicated paths: [] overlap: []
+D2. current files claimed by records
+  current files not claimed: []
+  current files claimed >1: {}
+  primaries per record: Counter({1: 36})
+D3. role bookkeeping
+  asset: 8 with record_key=0 with archive_reason=0
+  staged: 3 with record_key=3 with archive_reason=3
+  revision: 33 with record_key=33 with archive_reason=33
+  duplicate: 18 with record_key=18 with archive_reason=18
+D4. related reciprocity
+  directed edges: 70
+  asymmetric: []
+  self refs: [] unknown keys: []
+D5/D6. hub-record references
+  records -> unknown activity: []
+  hubs missing member: []
+  frontmatter activity problems: []
+D7. tags
+  not led by sslg: [] | vocabulary: {'sslg': 36, 'completion-report': 6, 'proposal': 7, 'excuse-letter': 4, 'meeting-notice': 5, 'memorandum': 12, 'governance-policy': 1, 'request': 1}
+D8. .base YAML
+  parses OK. top keys: ['filters', 'views']
+  global filters: {'and': ['file.folder != "Scheduler_v1-main"', 'file.folder != "99 Templates"']}
+  views: [('All records', 'table'), ('Proposals', 'table'), ('Completion reports', 'table'), ('Memoranda', 'table'), ('Needs review', 'table')]
+    All records {'and': ['type == "record"']} order items: 8
+    Proposals {'and': ['type == "record"', 'record_type == "proposal"']} order items: 5
+    Completion reports {'and': ['type == "record"', 'record_type == "completion-report"']} order items: 5
+    Memoranda {'and': ['type == "record"', 'record_type == "memorandum"']} order items: 5
+    Needs review {'and': ['type == "record"', 'status == "needs-review"']} order items: 4
+D9. Scheduler leakage into Bases
+  Scheduler .md: 6 with type: record: 0 []
+D10. count statements
+   START HERE.md ('16', '36')
+   01 Dashboards/Activity Dashboard.md ('16', '36')
+   01 Dashboards/Review Queue.md ('8', '13')
+   manifest activities 16 records 36 | flagged records 8 flagged activities 13
+   Bases 'Needs review' (status==needs-review): 6
+   flagged-but-not-needs-review records: ['om-sslg-2026-001-draft-vp', 'om-sslg-ia-2026-001']
+   flagged-but-not-needs-review activities: ['brigada-eskwela-2026', 'club-fair-2026', 'club-officers-election-2026', 'project-ecolead-2026', 'project-tinig-2026', 'project-liwanag-2026', 'foundation-day-2026', 'national-students-day-2026', 'short-film-festival-2026', 'earthquake-drill-2026', 'digital-device-survey-2026']
+D11. Activity Dashboard Records column
+Traceback (most recent call last):
+  File "C:\Users\Ma Christine\Downloads\SSLG MEMOS\.superpowers\sdd\2026-11-04-sslg-obsidian-vault\sdd_final_d.py", line 90, in <module>
+    per[re.match(r"\[\[.*?\|(.*)\]\]",c[0]).group(1)]=int(c[5])
+                                                      ~~~^^^^^^
+ValueError: invalid literal for int() with base 10: 'completed'

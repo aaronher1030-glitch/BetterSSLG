@@ -1,0 +1,33 @@
+E13 record notes: 36
+E13a underscore-form record_id rendered: 22
+E13b of those, string absent from own primary DOCX/PDF text (incl headers/footers): 21
+       ACR_SSLG_2026_001 | Activity Completion Report ACR-SSLG-2026-001 - Brigada Eskwela 2026.md
+       NOM_SSLG_2026_003 | Notice of Meeting NOM-SSLG-2026-003 - Brigada Eskwela 2026 and LGCC St
+       ACR_SSLG_2026_003 | Activity Completion Report ACR-SSLG-2026-003 - Club Fair 2026.md
+       NOM_SSLG_2026_001 | Notice of Meeting NOM-SSLG-2026-001 - Cluster IV Leadership Training C
+       ACR_SSLG_2026_005 | Activity Completion Report ACR-SSLG-2026-005 - Crafting of the General
+       NOM_SSLG_2026_003 | Notice of Meeting NOM-SSLG-2026-003 - Brigada Eskwela Post-Evaluation 
+       NOM_SSLG_2026_004 | Notice of Meeting NOM-SSLG-2026-004 - SSLG General Plan of Action Pres
+       EL_SSLG_2026_005 | Excuse Letter EL-SSLG-2026-005 - Earthquake Drill.md
+       ACR_SSLG_2026_004 | Activity Completion Report ACR-SSLG-2026-004 - Election of Registered 
+       AP_SSLG_2026_005 | Activity Proposal AP-SSLG-2026-005 - Foundation Day 2026.md
+       EL_SSLG_2026_010 | Excuse Letter EL-SSLG-2026-010 - Municipal Short Film Festival.md
+       AP_SSLG_2026_007 | Activity Proposal AP-SSLG-2026-007 - 2026 National Students' Day Celeb
+       ACR_SSLG_2026_006 | Activity Completion Report ACR-SSLG-2026-006 - Onto the Next- Leaders 
+       AP_SSLG_2026_001 | Activity Proposal AP-SSLG-2026-001 - Onto the Next- Leaders 2026-2027 
+       AP_SSLG_2026_002 | Activity Proposal AP-SSLG-2026-002 - Project ECOLEAD.md
+       AP_SSLG_2026_004 | Activity Proposal AP-SSLG-2026-004 - Project LIWANAG.md
+       AP_SSLG_2026_003 | Activity Proposal AP-SSLG-2026-003 - Project TINIG.md
+       ACR_SSLG_2026_002 | Activity Completion Report ACR-SSLG-2026-002 - SSLG Grade 7 Representa
+       EL_SSLG_2026_004 | Excuse Letter EL-SSLG-2026-004 - SSLG Grade 7 Representative Miting de
+       EL_SSLG_2026_005 | Excuse Letter EL-SSLG-2026-005 - SSLG Grade 7 Representative Elections
+       AP_SSLG_2026_006 | Activity Proposal AP-SSLG-2026-006 - 2026 World Teachers' Day Celebrat
+E13c record_id null (rendered 'Not stated in source'): 2
+E13d hyphen/other form ids: 12 | present in own source text: 5
+      ABSENT: OM SSLG No. 002, s. 2026 | Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Devi
+      ABSENT: OM SSLG No. 002, s. 2026 | Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Devi
+      ABSENT: OM SSLG No. 002, s. 2026 | Memorandum No. 002, s. 2026 - Implementation of Project ECOLEAD.md
+      ABSENT: OM SSLG No. 003, s. 2026 | Memorandum No. 003, s. 2026 - Revised Implementation of Project ECOLEA
+      ABSENT: OM SSLG No. 001, s. 2026 | Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committee
+      ABSENT: OM SSLG No. 001, s. 2026 | Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committee
+      ABSENT: OM-NFSSLG-2026-001 | National Federation Memorandum OM-NFSSLG-2026-001 - Nationwide Online 

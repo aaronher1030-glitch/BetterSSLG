@@ -1,0 +1,251 @@
+# SSLG QR Attendance Verification
+
+**Verification date:** 2026-11-24  
+**Local verification status:** PASS  
+**Real Google Apps Script/Sheets smoke test:** **Pending owner deployment**
+
+## Environment and method
+
+- Workspace: `C:/Users/Ma Christine/Downloads/SSLG MEMOS`
+- App: `C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App`
+- OS: Windows 10.0.26200, x64; shell: Git Bash
+- Observed runtime: Node.js `v26.13.1`, npm `11.20.0` (the environment notice listed Node `v24.22.1`; the commands actually ran under `v26.13.1`, which satisfies `node >=20`)
+- Browser: installed Playwright MCP, Chromium `Chrome/157.0.0.0`, `en-US`, Win32
+- Desktop viewport: `1440×1000`
+- Mobile viewport: fresh isolated browser context, `390×844`; mobile media query matched and document width equalled client width (`375px`, with no horizontal overflow)
+- Attendance date: Manila date `2026-11-24`
+- Backend: local preview with in-memory mocked Apps Script/Sheets behavior; no Google credentials, Spreadsheet ID, or external deployment was used
+
+## Automated commands and results
+
+Working directory: `SSLG Attendance App/`.
+
+```text
+$ npm install
+up to date, audited 4 packages in 27s
+found 0 vulnerabilities
+```
+
+```text
+$ npm test
+> sslg-office-attendance@1.0.0 test
+> node --test
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+```
+
+The original Task 7 run recorded durations of `2580.9216ms` and `1746.7284ms`; both runs reported `32` tests, `32` pass, `0` fail, `0` cancelled, `0` skipped, and `0` todo. The print-layout PASS below applies to the corrected `Styles.html`, not to the baseline print behavior. Fix round 1 reran `npm test` after the documentation corrections and scratch-PDF cleanup; its fresh result is recorded after the defect evidence below.
+
+The suite covered core/backend rules, client static and admin race behavior, QR decode round-trips, preview API behavior, and packaging.
+
+## Preview process
+
+```text
+$ npm run preview
+> sslg-office-attendance@1.0.0 preview
+> node preview/server.cjs
+SSLG attendance preview: http://127.0.0.1:4173
+```
+
+The preview was started as background task `b15je8567`. Both browser contexts were closed, that task alone was stopped, and `netstat -ano | findstr ':4173' || true` returned no output afterward.
+
+## URLs tested
+
+All URLs below are local-preview URLs. QR tokens were copied from actual `admin.generate` response bodies, not invented.
+
+### Desktop office URL
+
+- `http://127.0.0.1:4173/?page=admin`
+
+### Pair A — generated at `2026-11-24T21:00:50+08:00`
+
+- IN, opened in the fresh mobile context and reopened for the repeated scan:  
+  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=IN&code=2a57530d-6f2d-46ca-bfe3-50e98f9ce2f6`
+- OUT, opened in the same mobile context:  
+  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=OUT&code=5dbdc492-622a-4ad8-ac90-a1b1ff80194c`
+
+### Pair B — regeneration at `2026-11-24T21:24:59+08:00`
+
+- Previous Pair A IN URL: reopened and correctly rejected.
+- New IN, opened in the same mobile context for offline failure and retry:  
+  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=IN&code=24933dd4-1cd7-4a46-bc83-eb051933d762`
+- Generated OUT URL, not opened during this run:  
+  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=OUT&code=83f09141-6a24-455a-9a82-e91ac0072917`
+
+### Pair C — generated for print verification at `2026-11-24T21:30:15+08:00`
+
+- Generated IN URL, printed as a QR card but not opened:  
+  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=IN&code=228d26aa-e77a-40de-bcf5-43aec441efcb`
+- Generated OUT URL, printed as a QR card but not opened:  
+  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=OUT&code=0d5fd135-6286-46d6-90b1-1d5d567e3fa5`
+
+## Browser checklist
+
+| Step | Result | Observed evidence |
+| --- | --- | --- |
+| 3. Office golden path | PASS | Desktop admin date was `2026-11-24`. Generate confirmation read `Generate new IN and OUT codes? The previous pair for this date will stop working.` Two images rendered with `Check in` / `Check out`, date `2026-11-24`, and `Created 2026-11-24T21:00:50+08:00`. Empty list read `No scans recorded for this date.` Totals were `0 Scans`, `0 People`, `0 IN`, `0 OUT`. Search `No such attendee` caused no console error. Export offered `SSLG-attendance-2026-11-24.csv`, failure `null`. |
+| 4. New-user mobile registration | PASS | Fresh mobile context showed `Record your arrival`, `Your name`, and `Register and check in`; no admin link. Submitting `Ana Cruz` showed `Recorded`, `Checked in`, `Ana Cruz`, `2026-11-24T21:14:21+08:00 · Philippines time`, and `You may close this page.` Office then showed one IN row and totals `1 Scans`, `1 People`, `1 IN`, `0 OUT`. |
+| 5. Returning recognition and repeated scans | PASS | OUT page showed `Continuing as` / `Ana Cruz` and `Confirm check out`, with no name form or login. Success read `Checked out`, `Ana Cruz`, `2026-11-24T21:16:09+08:00 · Philippines time`; office totals became `2 Scans`, `1 People`, `1 IN`, `1 OUT`. Reopening IN showed `Continuing as` / `Ana Cruz` and `Confirm check in`; success timestamp was `2026-11-24T21:23:10+08:00`. Office showed three separate rows and totals `3 Scans`, `1 People`, `2 IN`, `1 OUT`; no duplicate-open-session message appeared. |
+| 6. Invalidation and failed request | PASS | Regeneration produced Pair B. Previous IN returned HTTP 200 with `{"ok":false,"error":"INVALID_CODE"}` and displayed `This QR code is no longer valid. A newer code may have been generated.` No row was added. With Pair B IN loaded, browser context offline state set `navigator.onLine=false` before confirmation. UI showed `The scan was not recorded. Check your connection and try again.`, no success heading, remembered `Ana Cruz`, and an enabled retry button. After reconnecting, retry showed `Checked in` at `2026-11-24T21:27:36+08:00`. Office then showed exactly four rows: the prior three plus one retry row, with the new row using `qr_created_at=2026-11-24T21:24:59+08:00`. |
+| 7. Print layout | PASS after fix | Generated Pair C, emulated `media=print`, and inspected computed print state after correcting `Styles.html`. Exactly 11 rendered visible elements existed, all `#qr-pair` or its two card descendants. Both QR images had natural size `336×336` and rendered print size `272.13×272.13px`; cards were `464.88×405.13px` and `464.89×405.13px`. Header/footer had `display:none`; buttons, filters, totals, and attendance table were hidden with zero bounds; the attendance card had `display:none`. Post-fix Chromium PDF `.task7-print-fixed.pdf` had one page; baseline `.task7-print.pdf` had two pages, with the second blank. |
+
+## Search, totals, date filter, and CSV evidence
+
+- Search `ana`: three visible rows, while totals remained `3 Scans`, `1 People`, `2 IN`, `1 OUT` before regeneration.
+- Search `nobody`: zero visible rows and `No scans recorded for this date.`, while totals remained based on the full date.
+- Export after three scans offered `SSLG-attendance-2026-11-24.csv`, failure `null`; its header was `"event_id","date","scanned_at","mode","name","device_token","qr_created_at"` and it contained three data rows. Device-token values are intentionally omitted from this report.
+- Date `2026-11-23`: `admin.list` returned totals `{scans:0,people:0,in:0,out:0}` and zero rows; export offered `SSLG-attendance-2026-11-23.csv`.
+- Date restored to `2026-11-24`: four rows and totals `{scans:4,people:1,in:3,out:1}`.
+
+## Exact critical UI text
+
+### Registration success
+
+```text
+OK
+RECORDED
+Checked in
+Ana Cruz
+2026-11-24T21:14:21+08:00 · Philippines time
+You may close this page.
+```
+
+### Returning recognition before OUT confirmation
+
+```text
+Check out
+Record your departure
+2026-11-24 · SSLG Office
+Continuing as
+Ana Cruz
+Confirm check out
+```
+
+### Invalid regenerated code
+
+```text
+This QR code is no longer valid. A newer code may have been generated.
+```
+
+### Offline failure before retry
+
+```text
+CHECK IN
+Record your arrival
+2026-11-24 · SSLG Office
+Continuing as
+Ana Cruz
+Confirm check in
+The scan was not recorded. Check your connection and try again.
+```
+
+### Successful retry
+
+```text
+OK
+RECORDED
+Checked in
+Ana Cruz
+2026-11-24T21:27:36+08:00 · Philippines time
+You may close this page.
+```
+
+### Post-fix print-media visible card text
+
+```text
+CHECK IN
+2026-11-24
+Created 2026-11-24T21:30:15+08:00
+
+CHECK OUT
+2026-11-24
+Created 2026-11-24T21:30:15+08:00
+```
+
+## Console and network review
+
+- Desktop: Playwright console inspection reported `Total messages: 0 (Errors: 0, Warnings: 0)`. All observed admin API requests returned HTTP 200.
+- Mobile: all normal `scan.status` and `scan.record` requests returned HTTP 200. The deliberate offline request was recorded as `[FAILED] net::ERR_INTERNET_DISCONNECTED`; the retry returned HTTP 200.
+- Mobile console contained exactly one expected resource error: `Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ http://127.0.0.1:4173/api/scan.record:0`.
+- The offline interaction had zero uncaught `pageerror` events. No uncaught application errors were observed. Invalid-code responses were HTTP 200 with `ok:false`, not transport failures.
+- No device token or QR token was logged by application console code. Tokens shown in this report are local QR URLs obtained from the preview API; device-token values are redacted.
+
+## Defects and fixes
+
+### Print-layout defect found and fixed
+
+- **Defect:** Printing the office page did not reliably produce only the two QR cards on one page.
+- **Root cause:** The baseline `@media print` rules hid most content with `visibility:hidden`, which retains layout space, while `#qr-pair` was absolutely positioned with `top:0; left:0`. The hidden page structure could still contribute to pagination, and the absolutely positioned QR pair was outside normal flow.
+- **RED / before:** Against baseline `Styles.html`, Chromium print output `.task7-print.pdf` contained **2 pages**, and the **second page was blank**.
+- **Minimal fix:** In `Styles.html` only, the print block adds explicit `display:none` rules for non-app body children, non-first app cards, and first-card children other than `#qr-pair`; resets the first card's print spacing/border; and changes `#qr-pair` from absolute positioning to `position:static`. Screen layout and attendance behavior were not changed.
+- **GREEN / after:** With that fix, Chromium print output `.task7-print-fixed.pdf` contained **1 page**. The post-fix computed-state evidence in Step 7 showed only `#qr-pair` and its two card descendants rendered visibly, with both QR images legible and controls, header, footer, totals, and attendance content absent.
+- **Print verdict:** **PASS after the fix.** This verdict does not describe the baseline's failing two-page output.
+- **Cleanup:** `.task7-print.pdf`, `.task7-print-hypothesis.pdf`, and `.task7-print-fixed.pdf` were session-created scratch artifacts, absent from the `before-task-7` snapshot. They were removed after their evidence was recorded; they are not app deliverables.
+
+No tests, package files, configuration, dependencies, or product features were changed. The existing automated suite was rerun after the documentation corrections and cleanup.
+
+### Fix round 1 fresh test result
+
+Working directory: `SSLG Attendance App/`.
+
+```text
+$ npm test
+> sslg-office-attendance@1.0.0 test
+> node --test
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1635.67
+```
+
+Exit code: `0`.
+
+## Ten-criterion acceptance audit
+
+| # | Acceptance criterion | Verdict | Evidence |
+| --- | --- | --- | --- |
+| 1 | A new phone can scan a valid IN code, enter a name once, and create exactly one Attendance row. | PASS | Fresh mobile context registered `Ana Cruz`; office list had exactly one IN row and totals `1/1/1/0`. Automated registration tests also passed. |
+| 2 | The same phone recognizes the saved name on a later scan without asking for a login or name again. | PASS | Same isolated mobile context showed `Continuing as Ana Cruz` for OUT and later IN, with confirmation buttons and no name form/login. |
+| 3 | A valid OUT scan creates an Attendance row with mode `OUT` and the server timestamp. | PASS | OUT success at `2026-11-24T21:16:09+08:00`; office row had mode `OUT`, matching Manila timestamp, and Pair A creation time. |
+| 4 | Multiple valid scans create multiple rows; no in/out pairing rule blocks them. | PASS | IN → OUT → IN produced three distinct rows; no duplicate-open-session message. Totals `3 Scans`, `1 People`, `2 IN`, `1 OUT`. |
+| 5 | Codes are date-bound in Asia/Manila time and become invalid when regenerated. | PASS | Manila-date core tests passed. Browser regeneration invalidated Pair A IN with `INVALID_CODE`; Pair B retry row carried Pair B's creation timestamp. |
+| 6 | Invalid codes and failed requests create no Attendance row and never show false success. | PASS | Invalid code added no row. Offline confirmation showed the not-recorded message and zero success headings; after one successful retry the total rose only from three to four. Automated rejection tests passed. |
+| 7 | The office can generate both QR codes, see their creation times, filter records, and export CSV. | PASS | Pair A/B/C generation, visible creation timestamps, search/date filtering, totals, and correctly named CSV downloads were observed. |
+| 8 | The Spreadsheet contains the documented `Daily Codes`, `People`, and `Attendance` tabs and columns. | PENDING | Mock-backed schema tests passed, but no owner Spreadsheet was available. **Pending owner deployment** real Sheets inspection. |
+| 9 | The student flow contains no admin link or attendance list. | PASS | Mobile snapshots and DOM checks found zero admin links and zero attendance tables; static navigation tests passed. |
+| 10 | Automated tests and local browser checks pass; deployment-specific checks remain explicitly pending until run on the owner's account. | PASS | The original full runs and the fix-round fresh run each passed `32/32`; desktop/mobile golden paths, recognition, repeats, invalidation, offline/retry, filtering, CSV, post-fix print media, and console/network checks passed locally. Real Apps Script/Sheets checks are explicitly **Pending owner deployment**. |
+
+## Pending owner deployment checks
+
+**Status: Pending owner deployment.** The local preview is not evidence about the owner's Google Spreadsheet or Apps Script execution.
+
+The owner still needs to:
+
+1. Configure the Spreadsheet ID and `Asia/Manila` timezone in the owner's Apps Script project.
+2. Deploy with the intended anyone-with-link access.
+3. Generate today's real codes.
+4. Scan IN on a phone, register a name, and confirm exactly one real `Attendance` row.
+5. Scan OUT on the same phone and confirm recognition plus a second real row.
+6. Regenerate and confirm the earlier codes are rejected without writes.
+7. Confirm the real office list and CSV show the real records.
+8. Inspect the real `Daily Codes`, `People`, and `Attendance` tabs and documented columns.
+
+## Scope and self-review
+
+- Re-read Task 7 Steps 1–10 and the ten acceptance criteria before recording results.
+- Used actual Playwright browser interactions at both required widths; static inspection was not substituted for browser checks.
+- Offline mode was genuinely exercised with Playwright browser-context offline control, not inferred from source.
+- No subagents or reviewers were dispatched; no Git commands or commits were run.
+- No phone number, login, private admin authentication, attendance-semantics change, credential, Spreadsheet ID, or external URL was introduced.
+- Task 7 changed `SSLG Attendance App/Styles.html` for the minimal print fix, added `SSLG Attendance App/VERIFICATION.md`, and removed its own three temporary scratch PDFs. It also created the approved SDD report outside the app at `.superpowers/sdd/2026-11-24-sslg-qr-attendance/task-7-report.md`.
+- The final app-source comparison against `before-task-7` (excluding `node_modules`) contains only modified `Styles.html` and added `VERIFICATION.md`. The three scratch PDFs were absent from that baseline and are absent after cleanup. No unsupported vault-wide file counts or whole-vault hash claims are made.
+- Print RED/GREEN evidence is Chromium print-media emulation, computed layout, and generated PDF page counts, not a physical-printer test. Mobile evidence is an isolated Chromium context at `390×844`, not a physical phone or native-camera scan.

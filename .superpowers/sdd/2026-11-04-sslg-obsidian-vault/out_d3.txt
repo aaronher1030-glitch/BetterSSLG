@@ -1,0 +1,53 @@
+X1. Activity Dashboard cell-level mismatches vs manifest: none
+X2. timeline note sets: event 20 issuance 22 no-date 14
+  event-dated records absent from event table: []
+  dated records absent from issuance table: []
+  no-date bullets that do have a date: []
+  notes in no timeline table: []
+X3. issuance cell-date != manifest date: none
+  event cell-date != manifest event_date: none
+X4. timeline activity-schedule rows: 16
+X5. Document Library folder claims
+   '02 Activities' exists=True md=43 sources=31
+   '03 Governance' exists=True md=4 sources=6
+   '04 External Memoranda' exists=True md=5 sources=5
+   '80 Assets' exists=True md=0 sources=8
+   '90 Archive' exists=True md=1 sources=54
+   '99 Templates' exists=True md=2 sources=0
+   05 General Records mentioned: False on disk: False
+   Bases embed present: True
+X6. Review Queue
+  reasons absent verbatim: 0 []
+  flagged: 21 titles absent: []
+  record headings: 8 activity headings: 13
+  heading targets resolve: True
+  claim line: ['Needs review: 8 records, 13 activities.']
+  needs-review w/o reasons: []
+  activity 'missing stage' reasons also in hub Missing stages? 17 of 17
+X7. START HERE routes vs spec list
+   route Activity Dashboard : True
+   route Document Library : True
+   route Timeline : True
+   route Review Queue : True
+   route Governance : True
+   route External Memoranda : True
+   governance member links: 4
+   external member links: 5
+   activity links: 16
+   80 Assets / 90 Archive / 99 Templates mentioned: False False False
+X8. Templates on disk vs renderer output
+   disk record template == render_record_template(): True
+   disk activity template == render_activity_template(): True
+   record template H2 order: ['## Summary', '## Key details', '## Related records', '## Revision history', '## Original document']
+   record template final H2 == '## Original document': True
+   missing template properties: []
+   template unresolved wikilinks: [] []
+   activity template H2 order: ['## Summary', '## Activity trail', '## Outcomes and follow-up', '## Related governance', '## Original files', '## Missing stages']
+      activity template has 'At a glance': False
+      activity template has 'Activity trail': True
+      activity template has 'Outcomes and follow-up': True
+      activity template has 'Missing stages': True
+      activity template has 'Original files': True
+   {{tokens}}: ['{{title}}', '{{date:YYYY-MM-DD}}', '{{title}}', '{{title}}', '{{title}}']
+   generated note H2 order: ['## Summary', '## Key details', '## Related records', '## Revision history', '## Original document']
+   generated hub H2 order: ['## Summary', '## Activity trail', '## Outcomes and follow-up', '## Related governance', '## Original files', '## Missing stages']

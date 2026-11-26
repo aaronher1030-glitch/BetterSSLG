@@ -1,0 +1,40 @@
+E11a vault md count: 52
+E11b notes with record_id property (record notes): 32
+E11c notes rendering 'Document ID: Not stated in source': 2
+    02 Activities/Cluster IV SSLG Federation Leadership Training Camp/Notes/Notice of Meeting - Cluster IV Leadership Training Camp and Organizational Alignment (16 May 2026).md | record_id= None
+    02 Activities/SSLG Grade 7 Representative Elections 2026/Notes/Request for Use of the Multi-Purpose Hall - Grade 7 Representatives Vote Consolidation.md | record_id= None
+E11d notes rendering a Document ID value: 30
+E11e printed value != frontmatter record_id: 0
+E11f record-note lines containing provenance wording: 4
+    02 Activities/Nationwide Online Survey on Digital Device Use/Notes/Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Device Use in Schools (27 August 2026).md :: - [[90 Archive/Revisions/OM_SSLG_2026_001 (14) (2).docx|OM_SSLG_2026_001 (14) (2).docx]] — revision: file named OM_SSLG_2026_001 but containing the 27 August su
+    02 Activities/Project ECOLEAD/Notes/Memorandum No. 002, s. 2026 - Implementation of Project ECOLEAD.md :: - [[90 Archive/Revisions/OM_SSLG_2026_003.docx|OM_SSLG_2026_003.docx]] — revision: No. 002 ECOLEAD text re-issued 21 September 2026 in a file named OM_SSLG_2026
+    02 Activities/Project ECOLEAD/Notes/Memorandum No. 003, s. 2026 - Revised Implementation of Project ECOLEAD.md :: > The file names also disagree with the numbers printed inside the documents.
+    02 Activities/SSLG Grade 7 Representative Elections 2026/Notes/Excuse Letter EL-SSLG-2026-004 - SSLG Grade 7 Representative Miting de Avance.md :: - [[90 Archive/Revisions/EL_SSLG_2026_0041.docx|EL_SSLG_2026_0041.docx]] — revision: filename variant EL_SSLG_2026_0041 with text identical to EL_SSLG_2026_004.
+E11g ALL vault-md lines with provenance wording: 5
+    01 Dashboards/Review Queue.md : 76 :: - The file names also disagree with the numbers printed inside the documents.
+    02 Activities/Nationwide Online Survey on Digital Device Use/Notes/Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Device Use in Schools (27 August 2026).md : 65 :: - [[90 Archive/Revisions/OM_SSLG_2026_001 (14) (2).docx|OM_SSLG_2026_001 (14) (2).docx]] — revision: file named OM_SSLG_2026_001 but containing the 27 August survey memorandum numb
+    02 Activities/Project ECOLEAD/Notes/Memorandum No. 002, s. 2026 - Implementation of Project ECOLEAD.md : 62 :: - [[90 Archive/Revisions/OM_SSLG_2026_003.docx|OM_SSLG_2026_003.docx]] — revision: No. 002 ECOLEAD text re-issued 21 September 2026 in a file named OM_SSLG_2026_003
+    02 Activities/Project ECOLEAD/Notes/Memorandum No. 003, s. 2026 - Revised Implementation of Project ECOLEAD.md : 62 :: > The file names also disagree with the numbers printed inside the documents.
+    02 Activities/SSLG Grade 7 Representative Elections 2026/Notes/Excuse Letter EL-SSLG-2026-004 - SSLG Grade 7 Representative Miting de Avance.md : 55 :: - [[90 Archive/Revisions/EL_SSLG_2026_0041.docx|EL_SSLG_2026_0041.docx]] — revision: filename variant EL_SSLG_2026_0041 with text identical to EL_SSLG_2026_004.docx
+E11h notes printing an underscore-form record_id as Document ID: 21
+    ACR_SSLG_2026_001 | 02 Activities/Brigada Eskwela 2026/Notes/Activity Completion Report ACR-SSLG-2026-001 - Brigada Eskwela 2026.md
+    ACR_SSLG_2026_002 | 02 Activities/SSLG Grade 7 Representative Elections 2026/Notes/Activity Completion Report ACR-SSLG-2026-002 - SSLG Grade 7 Representative Elections.md
+    ACR_SSLG_2026_003 | 02 Activities/Club Fair 2026/Notes/Activity Completion Report ACR-SSLG-2026-003 - Club Fair 2026.md
+    ACR_SSLG_2026_004 | 02 Activities/Election of Registered School Clubs and Organizations 2026/Notes/Activity Completion Report ACR-SSLG-2026-004 - Election of Registered School Clubs and Organizations.md
+    ACR_SSLG_2026_005 | 02 Activities/Crafting of the SSLG General Plan of Action 2026/Notes/Activity Completion Report ACR-SSLG-2026-005 - Crafting of the General Plan of Action (GPOA).md
+    ACR_SSLG_2026_006 | 02 Activities/Onto the Next - Leaders Induction 2026/Notes/Activity Completion Report ACR-SSLG-2026-006 - Onto the Next- Leaders Induction Ceremony.md
+    AP_SSLG_2026_001 | 02 Activities/Onto the Next - Leaders Induction 2026/Notes/Activity Proposal AP-SSLG-2026-001 - Onto the Next- Leaders 2026-2027 Induction Ceremony.md
+    AP_SSLG_2026_002 | 02 Activities/Project ECOLEAD/Notes/Activity Proposal AP-SSLG-2026-002 - Project ECOLEAD.md
+    AP_SSLG_2026_003 | 02 Activities/Project TINIG/Notes/Activity Proposal AP-SSLG-2026-003 - Project TINIG.md
+    AP_SSLG_2026_004 | 02 Activities/Project LIWANAG/Notes/Activity Proposal AP-SSLG-2026-004 - Project LIWANAG.md
+    AP_SSLG_2026_005 | 02 Activities/Foundation Day 2026/Notes/Activity Proposal AP-SSLG-2026-005 - Foundation Day 2026.md
+    AP_SSLG_2026_006 | 02 Activities/World Teachers Day 2026/Notes/Activity Proposal AP-SSLG-2026-006 - 2026 World Teachers' Day Celebration.md
+    AP_SSLG_2026_007 | 02 Activities/National Students Day 2026/Notes/Activity Proposal AP-SSLG-2026-007 - 2026 National Students' Day Celebration.md
+    EL_SSLG_2026_004 | 02 Activities/SSLG Grade 7 Representative Elections 2026/Notes/Excuse Letter EL-SSLG-2026-004 - SSLG Grade 7 Representative Miting de Avance.md
+    EL_SSLG_2026_005 | 02 Activities/Earthquake Drill 2026/Notes/Excuse Letter EL-SSLG-2026-005 - Earthquake Drill.md
+    EL_SSLG_2026_005 | 02 Activities/SSLG Grade 7 Representative Elections 2026/Notes/Excuse Letter EL-SSLG-2026-005 - SSLG Grade 7 Representative Elections.md
+    EL_SSLG_2026_010 | 02 Activities/Municipal Short Film Festival 2026/Notes/Excuse Letter EL-SSLG-2026-010 - Municipal Short Film Festival.md
+    NOM_SSLG_2026_001 | 02 Activities/Cluster IV SSLG Federation Leadership Training Camp/Notes/Notice of Meeting NOM-SSLG-2026-001 - Cluster IV Leadership Training Camp Preparation.md
+    NOM_SSLG_2026_003 | 02 Activities/Brigada Eskwela 2026/Notes/Notice of Meeting NOM-SSLG-2026-003 - Brigada Eskwela 2026 and LGCC Standing Committees.md
+    NOM_SSLG_2026_003 | 02 Activities/Crafting of the SSLG General Plan of Action 2026/Notes/Notice of Meeting NOM-SSLG-2026-003 - Brigada Eskwela Post-Evaluation and SSLG GPOA.md
+    NOM_SSLG_2026_004 | 02 Activities/Crafting of the SSLG General Plan of Action 2026/Notes/Notice of Meeting NOM-SSLG-2026-004 - SSLG General Plan of Action Presentation.md

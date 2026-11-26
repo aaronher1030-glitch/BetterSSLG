@@ -1,0 +1,288 @@
+<script>
+const SERVER_ACTIONS = {
+  'scan.status': 'scanStatus',
+  'scan.record': 'scanRecord',
+  'admin.generate': 'adminGenerate',
+  'admin.list': 'adminList',
+  'admin.export': 'adminExport'
+};
+
+async function api(action, payload = {}) {
+  if (window.google && window.google.script && window.google.script.run) {
+    return new Promise((resolve, reject) => {
+      window.google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(error => reject(new Error(error && error.message ? error.message : 'APPS_SCRIPT_FAILED')))
+        [SERVER_ACTIONS[action]](payload);
+    });
+  }
+  const response = await fetch(`/api/${action}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok || !data.ok) throw new Error(data.error || 'REQUEST_FAILED');
+  return data;
+}
+
+function getDeviceToken_() {
+  const key = 'sslg.attendance.device.v1';
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+  let token;
+  if (window.crypto && window.crypto.randomUUID) {
+    token = window.crypto.randomUUID();
+  } else {
+    const bytes = new Uint8Array(24);
+    window.crypto.getRandomValues(bytes);
+    token = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+  localStorage.setItem(key, token);
+  return token;
+}
+
+const ERROR_MESSAGES = {
+  NAME_REQUIRED: 'Please enter your name.',
+  NAME_TOO_LONG: 'Please use a name of 80 characters or fewer.',
+  DEVICE_TOKEN_REQUIRED: 'This browser could not create a device token. Enable site storage and try again.',
+  INVALID_REQUEST: 'This QR link is incomplete or invalid.',
+  CODE_NOT_FOUND: 'This code is not registered. Ask the SSLG office for today’s code.',
+  WRONG_DATE: 'This QR code belongs to a different date.',
+  CODE_EXPIRED: 'This QR code has expired. Ask the SSLG office for today’s code.',
+  INVALID_CODE: 'This QR code is no longer valid. A newer code may have been generated.',
+  MODE_MISMATCH: 'This is not the correct code for this attendance action.',
+  SPREADSHEET_NOT_CONFIGURED: 'The attendance Sheet is not configured yet. Please contact the SSLG office.',
+  SHEET_BUSY: 'The office Sheet is busy. Please try again in a moment.',
+  REQUEST_FAILED: 'The scan was not recorded. Check your connection and try again.',
+  APPS_SCRIPT_FAILED: 'The scan was not recorded. Check your connection and try again.'
+};
+
+function errorMessage_(error) {
+  return ERROR_MESSAGES[error && error.message] || ERROR_MESSAGES.REQUEST_FAILED;
+}
+
+function scanParams_() {
+  return {
+    date: new URLSearchParams(location.search).get('date'),
+    mode: new URLSearchParams(location.search).get('mode'),
+    code: new URLSearchParams(location.search).get('code')
+  };
+}
+
+async function renderScanPage_(params) {
+  const app = document.getElementById('app');
+  let deviceToken;
+  try {
+    deviceToken = getDeviceToken_();
+  } catch (error) {
+    app.innerHTML = `<section class="card"><p class="notice notice-error">${errorMessage_({ message: 'DEVICE_TOKEN_REQUIRED' })}</p></section>`;
+    return;
+  }
+  let status;
+  try {
+    status = await api('scan.status', { ...params, device_token: deviceToken });
+  } catch (error) {
+    app.innerHTML = `<section class="card"><p class="notice notice-error">${errorMessage_(error)}</p></section>`;
+    return;
+  }
+  if (!status.ok) {
+    app.innerHTML = `<section class="card"><p class="notice notice-error">${errorMessage_({ message: status.error })}</p></section>`;
+    return;
+  }
+  const isIn = status.mode === 'IN';
+  app.innerHTML = `
+    <section class="card scan-card">
+      <p class="eyebrow">${isIn ? 'Check in' : 'Check out'}</p>
+      <h2>${isIn ? 'Record your arrival' : 'Record your departure'}</h2>
+      <p class="scan-meta">${escapeHtml_(status.date)} · SSLG Office</p>
+      ${status.name ? `
+        <p class="welcome">Continuing as</p>
+        <p class="registered-name">${escapeHtml_(status.name)}</p>
+        <button id="confirm-scan" class="button ${isIn ? 'button-primary' : 'button-out'}">Confirm ${isIn ? 'check in' : 'check out'}</button>
+      ` : `
+        <form id="registration-form">
+          <label class="field">Your name
+            <input name="name" autocomplete="name" maxlength="80" required placeholder="Enter your full name">
+          </label>
+          <button class="button ${isIn ? 'button-primary' : 'button-out'}" type="submit">Register and ${isIn ? 'check in' : 'check out'}</button>
+          <p class="helper-text">You only need to enter your name once on this phone.</p>
+        </form>
+      `}
+      <p id="scan-error" class="notice notice-error" hidden></p>
+    </section>`;
+
+  const submit = name => submitScan_(params, deviceToken, name);
+  const form = document.getElementById('registration-form');
+  if (form) {
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      submit(new FormData(form).get('name'));
+    });
+  }
+  const confirm = document.getElementById('confirm-scan');
+  if (confirm) confirm.addEventListener('click', () => submit(status.name));
+}
+
+async function submitScan_(params, deviceToken, name) {
+  const button = document.querySelector('#app button');
+  const errorBox = document.getElementById('scan-error');
+  if (button) button.disabled = true;
+  if (errorBox) errorBox.hidden = true;
+  try {
+    const result = await api('scan.record', { ...params, device_token: deviceToken, name });
+    if (!result.ok) throw new Error(result.error);
+    const event = result.event;
+    document.getElementById('app').innerHTML = `
+      <section class="card success-card" aria-live="polite">
+        <div class="success-mark" aria-hidden="true">OK</div>
+        <p class="eyebrow">Recorded</p>
+        <h2>${event.mode === 'IN' ? 'Checked in' : 'Checked out'}</h2>
+        <p class="registered-name">${escapeHtml_(event.name)}</p>
+        <p class="scan-meta">${escapeHtml_(event.scanned_at)} · Philippines time</p>
+        <p class="helper-text">You may close this page.</p>
+      </section>`;
+  } catch (error) {
+    if (button) button.disabled = false;
+    if (errorBox) {
+      errorBox.textContent = errorMessage_(error);
+      errorBox.hidden = false;
+    }
+  }
+}
+
+function escapeHtml_(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderLandingPage_() {
+  document.getElementById('app').innerHTML = `
+    <section class="card scan-card">
+      <p class="eyebrow">SSLG Office</p>
+      <h2>Scan to record attendance</h2>
+      <p>Use your phone camera to scan today’s check-in or check-out QR code posted by the office.</p>
+      <p class="helper-text">First time here? You will be asked for your name once. This phone will remember it for later scans.</p>
+    </section>`;
+}
+
+function defaultAdminDate_() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+}
+
+function qrDataUrl_(value) {
+  const qr = window.qrcode(0, 'M');
+  qr.addData(value);
+  qr.make();
+  return qr.createDataURL(8, 4);
+}
+
+async function renderAdminPage_() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <section class="card admin-card">
+      <p class="eyebrow">Office tools</p>
+      <h2>Daily QR codes</h2>
+      <p class="helper-text">Generating a new pair invalidates the old pair for this date.</p>
+      <label class="field">Attendance date
+        <input id="admin-date" type="date" value="${defaultAdminDate_()}">
+      </label>
+      <button id="generate-codes" class="button button-primary">Generate QR pair</button>
+      <p id="admin-error" class="notice notice-error" role="alert" hidden></p>
+      <div id="qr-pair" class="admin-grid" aria-live="polite" hidden></div>
+    </section>
+    <section class="card admin-card">
+      <p class="eyebrow">Shared Sheet</p>
+      <h2>Attendance records</h2>
+      <label class="field">Search name
+        <input id="attendance-search" type="search" placeholder="Search registered names">
+      </label>
+      <div id="attendance-totals" class="totals" aria-live="polite"></div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Attendance records"><table class="attendance-table"><thead><tr><th>Time</th><th>Name</th><th>Action</th></tr></thead><tbody id="attendance-body"></tbody></table></div>
+      <button id="export-csv" class="button">Export CSV</button>
+    </section>`;
+
+  const dateInput = document.getElementById('admin-date');
+  const searchInput = document.getElementById('attendance-search');
+  document.getElementById('generate-codes').addEventListener('click', () => generateCodes_(dateInput.value).catch(showAdminError_));
+  dateInput.addEventListener('change', () => {
+    document.getElementById('qr-pair').hidden = true;
+    loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_);
+  });
+  searchInput.addEventListener('input', () => loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_));
+  document.getElementById('export-csv').addEventListener('click', () => downloadCsv_(dateInput.value).catch(showAdminError_));
+  await loadAttendance_(dateInput.value, '').catch(showAdminError_);
+}
+
+function showAdminError_(error) {
+  const errorBox = document.getElementById('admin-error');
+  if (!errorBox) return;
+  const isRequestFailure = error && (error.message === 'REQUEST_FAILED' || error.message === 'APPS_SCRIPT_FAILED');
+  errorBox.textContent = isRequestFailure
+    ? 'The office request could not be completed. Check your connection and try again.'
+    : errorMessage_(error);
+  errorBox.hidden = false;
+}
+
+async function generateCodes_(dateKey) {
+  const button = document.getElementById('generate-codes');
+  const errorBox = document.getElementById('admin-error');
+  if (!confirm('Generate new IN and OUT codes? The previous pair for this date will stop working.')) return;
+  button.disabled = true;
+  errorBox.hidden = true;
+  try {
+    const result = await api('admin.generate', { date: dateKey });
+    if (!result.ok) throw new Error(result.error);
+    const record = result.record;
+    document.getElementById('qr-pair').innerHTML = `
+      <article class="qr-card qr-in"><p class="eyebrow">Check in</p><img alt="Check-in QR code" src="${qrDataUrl_(record.in_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>
+      <article class="qr-card qr-out"><p class="eyebrow">Check out</p><img alt="Check-out QR code" src="${qrDataUrl_(record.out_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>`;
+    document.getElementById('qr-pair').hidden = false;
+    await loadAttendance_(dateKey, document.getElementById('attendance-search').value);
+  } catch (error) {
+    showAdminError_(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function loadAttendance_(dateKey, query) {
+  const result = await api('admin.list', { date: dateKey, query });
+  if (!result.ok) throw new Error(result.error);
+  document.getElementById('attendance-totals').innerHTML = `
+    <div><strong>${result.totals.scans}</strong><span>Scans</span></div>
+    <div><strong>${result.totals.people}</strong><span>People</span></div>
+    <div><strong>${result.totals.in}</strong><span>IN</span></div>
+    <div><strong>${result.totals.out}</strong><span>OUT</span></div>`;
+  document.getElementById('attendance-body').innerHTML = result.rows.length
+    ? result.rows.map(row => `<tr><td>${escapeHtml_(row.scanned_at)}</td><td>${escapeHtml_(row.name)}</td><td><span class="mode mode-${row.mode === 'IN' ? 'in' : 'out'}">${escapeHtml_(row.mode)}</span></td></tr>`).join('')
+    : '<tr><td colspan="3">No scans recorded for this date.</td></tr>';
+}
+
+async function downloadCsv_(dateKey) {
+  const result = await api('admin.export', { date: dateKey });
+  if (!result.ok) throw new Error(result.error);
+  const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = result.filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const page = new URLSearchParams(location.search).get('page');
+  if (page === 'admin') renderAdminPage_();
+  else if (page === 'scan') renderScanPage_(scanParams_());
+  else renderLandingPage_();
+});
+</script>

@@ -1,0 +1,77 @@
+E1a. page-count claims
+
+E1b. 'byte-identical duplicate of X' claims (role=duplicate)
+   violations: 17
+      ('05-16-26-sslg-notice-of-meeting-(1).docx', '05-16-26-SSLG-Notice-of-Meeting', 'TARGET NOT IN MANIFEST')
+      ('05-16-26-sslg-notice-of-meeting_vp-(1).docx', '05-16-26-SSLG-Notice-of-Meeting_VP', 'TARGET NOT IN MANIFEST')
+      ('ap_sslg_2026_006_revised-(1).docx', 'AP_SSLG_2026_006_revised', 'TARGET NOT IN MANIFEST')
+      ('ap_sslg_2026_006_revised-(2).docx', 'AP_SSLG_2026_006_revised', 'TARGET NOT IN MANIFEST')
+      ('ap_sslg_2026_007-(1).docx', 'AP_SSLG_2026_007', 'TARGET NOT IN MANIFEST')
+      ('ap_sslg_2026_007-(2).docx', 'AP_SSLG_2026_007', 'TARGET NOT IN MANIFEST')
+      ('el_sslg_2026_010-(1).docx', 'EL_SSLG_2026_010', 'TARGET NOT IN MANIFEST')
+      ('nom_sslg_2026_003-(3).docx', 'NOM_SSLG_2026_003', 'TARGET NOT IN MANIFEST')
+      ('om-dfsslg-2026-010-(1).pdf', 'OM-DFSSLG-2026-010', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(6).docx', 'OM_SSLG_2026_001 (1)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(7).docx', 'OM_SSLG_2026_001 (4)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(9).docx', 'OM_SSLG_2026_001 (8)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(10).docx', 'OM_SSLG_2026_001 (3)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(12).docx', 'OM_SSLG_2026_001 (8)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(13).docx', 'OM_SSLG_2026_001 (3)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_001-(14).docx', 'OM_SSLG_2026_001 (8)', 'TARGET NOT IN MANIFEST')
+      ('om_sslg_2026_002-(1).pdf', 'OM_SSLG_2026_002', 'TARGET NOT IN MANIFEST')
+   total byte-identical claims: 17
+
+E1c. duplicate/staged entries whose reason mentions a same-hash sibling
+   hash groups: {'OM-DFSSLG-2026-003-1.pdf', 'EL_SSLG_2026_010 (1).docx, EL_SSLG_2026_010.docx', 'OM_SSLG_2026_001 (1).docx, OM_SSLG_2026_001 (6).docx', 'OM_SSLG_2026_001 (8).docx, OM_SSLG_2026_001 (9).docx, OM_SSLG_2026_001 (12).docx, OM_SSLG_2026_001 (14).docx', 'NOM_SSLG_2026_003 (3).docx, NOM_SSLG_2026_003.docx', 'OM_SSLG_2026_001 (3).docx, OM_SSLG_2026_001 (10).docx, OM_SSLG_2026_001 (13).docx', 'AP_SSLG_2026_007 (1).docx, AP_SSLG_2026_007 (2).docx, AP_SSLG_2026_007.docx', 'OM_SSLG_2026_001 (4).docx, OM_SSLG_2026_001 (7).docx', 'OM-DFSSLG-2026-010 (1).pdf, OM-DFSSLG-2026-010.pdf', 'OM_SSLG_2026_002..docx', 'OM_SSLG_2026_002 (1).pdf, OM_SSLG_2026_002.pdf', '05-16-26-SSLG-Notice-of-Meeting_VP (1).docx, 05-16-26-SSLG-Notice-of-Meeting_VP.docx', 'AP_SSLG_2026_006_revised (1).docx, AP_SSLG_2026_006_revised (2).docx, AP_SSLG_2026_006_revised.docx', '05-16-26-SSLG-Notice-of-Meeting (1).docx, 05-16-26-SSLG-Notice-of-Meeting.docx'}
+
+E1d. adviser / principal names appearing in claims
+   [acr-sslg-2026-005] advisers was strengthened.
+   [acr-sslg-2026-006] Principal's opening remarks.
+   [el-sslg-2026-004] Adviser, recommending approval by the Head Teacher VI.
+   [el-sslg-2026-005-drill] Principal IV.
+   [el-sslg-2026-005-elections] Adviser.
+   [nom-0516-sslg-nom] Ms. Micaella Sabelle R. Monloy, Secretariat Committee Chairperson.
+   [nom-sslg-2026-001] Hon. Rhian Jade L. Castro, LGCC Chairperson and SSLG President.
+   [om-dfsslg-2026-007] Hon. Faith Naomi R. Manganaan.
+   [om-dfsslg-2026-010] Hon. Rhian Jade L. Castro, Acting President and Vice President, DFSSLG S.Y. 2026-2027.
+   [om-sslg-2026-001-may25] Hon. Rhian Jade L. Castro as LGCC Chairperson and SSLG President.
+   [om-sslg-2026-001-may27] Hon. Chloe Danielle L. David and Hon. Kean Albert J. Pineda.
+   [om-sslg-2026-002-survey-aug28] Adviser.
+
+E1e. date-bearing claims per record vs frontmatter
+   acr-sslg-2026-001: date=None event=2026-06-05 record_id='ACR_SSLG_2026_001' status=final sources=['ACR_SSLG_2026_001.docx']
+   acr-sslg-2026-002: date=None event=2026-06-25 record_id='ACR_SSLG_2026_002' status=final sources=['ACR_SSLG_2026_002.docx']
+   acr-sslg-2026-003: date=None event=2026-06-01 record_id='ACR_SSLG_2026_003' status=final sources=['ACR_SSLG_2026_003.docx']
+   acr-sslg-2026-004: date=None event=2026-06-17 record_id='ACR_SSLG_2026_004' status=final sources=['ACR_SSLG_2026_004.docx']
+   acr-sslg-2026-005: date=None event=2026-07-03 record_id='ACR_SSLG_2026_005' status=final sources=['ACR_SSLG_2026_005.docx']
+   acr-sslg-2026-006: date=None event=2026-07-22 record_id='ACR_SSLG_2026_006' status=final sources=['ACR_SSLG_2026_006.docx']
+   ap-sslg-2026-001: date=None event=2026-07-22 record_id='AP_SSLG_2026_001' status=final sources=['AP_SSLG_2026_001.docx']
+   ap-sslg-2026-002: date=None event=None record_id='AP_SSLG_2026_002' status=final sources=['AP_SSLG_2026_002.docx']
+   ap-sslg-2026-003: date=None event=None record_id='AP_SSLG_2026_003' status=final sources=['AP_SSLG_2026_003.docx']
+   ap-sslg-2026-004: date=None event=None record_id='AP_SSLG_2026_004' status=final sources=['AP_SSLG_2026_004.docx']
+   ap-sslg-2026-005: date=None event=None record_id='AP_SSLG_2026_005' status=needs-review sources=['AP_SSLG_2026_005 (2).docx']
+   ap-sslg-2026-006: date=None event=2026-10-02 record_id='AP_SSLG_2026_006' status=needs-review sources=['AP_SSLG_2026_006_revised.docx']
+   ap-sslg-2026-007: date=None event=2026-11-17 record_id='AP_SSLG_2026_007' status=final sources=['AP_SSLG_2026_007_AnnexD_proofread.docx', 'AP_SSLG_2026_007_AnnexD.pdf']
+   el-sslg-2026-004: date=2026-06-23 event=2026-06-24 record_id='EL_SSLG_2026_004' status=final sources=['EL_SSLG_2026_004.docx']
+   el-sslg-2026-005-drill: date=2026-06-23 event=2026-06-24 record_id='EL_SSLG_2026_005' status=final sources=['EL_SSLG_2026_005.docx']
+   el-sslg-2026-005-elections: date=2026-06-23 event=2026-06-25 record_id='EL_SSLG_2026_005' status=needs-review sources=['EL_SSLG_2026_005 (1).docx']
+   el-sslg-2026-010: date=2026-07-13 event=2026-07-13 record_id='EL_SSLG_2026_010' status=final sources=['EL_SSLG_2026_010.docx']
+   nom-0516-sslg-nom: date=2026-05-14 event=2026-05-16 record_id=None status=final sources=['05-16-26-SSLG-Notice-of-Meeting.docx']
+   nom-sslg-2026-001: date=2026-05-14 event=2026-05-15 record_id='NOM_SSLG_2026_001' status=final sources=['NOM_SSLG_2026_001.docx']
+   nom-sslg-2026-003-jun06: date=2026-06-06 event=2026-06-07 record_id='NOM_SSLG_2026_003' status=final sources=['NOM_SSLG_2026_003.docx']
+   nom-sslg-2026-003-may29: date=2026-05-29 event=2026-05-31 record_id='NOM_SSLG_2026_003' status=final sources=['NOM_SSLG_2026_003 (1).docx']
+   nom-sslg-2026-004: date=2026-07-02 event=2026-07-03 record_id='NOM_SSLG_2026_004' status=signed sources=['NOM_SSLG_2026_004.docx', 'NOM_SSLG_2026_004.pdf']
+   om-cfsslg-2026-003: date=2026-09-01 event=None record_id='OM-CFSSLG-2026-003' status=reference sources=['OM-CFSSLG-2026-003.docx']
+   om-dfsslg-2026-003: date=2026-05-16 event=None record_id='OM-DFSSLG-2026-003' status=reference sources=['OM-DFSSLG-2026-003-1.pdf']
+   om-dfsslg-2026-007: date=2026-06-05 event=None record_id='OM-DFSSLG-2026-007' status=reference sources=['OM-DFSSLG-2026-007-1.pdf']
+   om-dfsslg-2026-010: date=2026-08-26 event=None record_id='OM-DFSSLG-2026-010' status=reference sources=['OM-DFSSLG-2026-010.pdf']
+   om-nfsslg-2026-001: date=2026-08-25 event=None record_id='OM-NFSSLG-2026-001' status=signed sources=['Memorandum-OM-NFSSLG-2026-001_signed-2.pdf']
+   om-sslg-2026-001-draft-vp: date=None event=None record_id='No. ____, s. 2026' status=draft sources=['OM_SSLG_2026_001 (5).docx']
+   om-sslg-2026-001-may25: date=2026-05-25 event=None record_id='OM SSLG No. 001, s. 2026' status=final sources=['OM_SSLG_2026_001.docx', 'OM_SSLG_2026_001.pdf']
+   om-sslg-2026-001-may27: date=2026-05-27 event=None record_id='OM SSLG No. 001, s. 2026' status=final sources=['OM_SSLG_2026_001 (8).docx', 'OM_SSLG_2026_001.docx.pdf']
+   om-sslg-2026-002-ecolead: date=2026-07-28 event=2026-07-31 record_id='OM SSLG No. 002, s. 2026' status=needs-review sources=['OM_SSLG_2026_002.docx']
+   om-sslg-2026-002-survey-aug27: date=2026-08-27 event=None record_id='OM SSLG No. 002, s. 2026' status=needs-review sources=['OM_SSLG_2026_002 (3).docx', 'OM_SSLG_2026_002.docx.pdf']
+   om-sslg-2026-002-survey-aug28: date=2026-08-28 event=None record_id='OM SSLG No. 002, s. 2026' status=signed sources=['OM_SSLG_2026_002 (6).docx', 'OM_SSLG_2026_002.pdf']
+   om-sslg-2026-003-ecolead: date=2026-08-03 event=2026-08-07 record_id='OM SSLG No. 003, s. 2026' status=needs-review sources=['OM_SSLG_2026_002 (7).docx']
+   om-sslg-ia-2026-001: date=2026-06-22 event=None record_id='OM-SSLG-IA-2026-001' status=final sources=['SSLG_Governance_Memorandum_OM-SSLG-IA-2026-001.docx']
+   request-mph-jun25: date=2026-06-25 event=None record_id=None status=final sources=['REQUEST_FOR_MPH.docx']

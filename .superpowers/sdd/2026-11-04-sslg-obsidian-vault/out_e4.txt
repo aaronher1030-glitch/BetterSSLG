@@ -1,0 +1,266 @@
+====================================================================================================
+FILE: 03 Governance/Sources/OM_SSLG_2026_001.docx chars: 10571
+first 14 lines:
+   | MEMORANDUM
+   | No. 001, s. 2026
+   | FOR:VICE PRESIDENTSECRETARYTREASURERAUDITORPUBLIC INFORMATION OFFICERPROTOCOL OFFICERGRADE-LEVEL REPRESENTATIV
+   | FROM: Hon. RHIAN JADE L. CASTRO
+   | Chairperson, Learner Government Coordinating Council (LGCC) President
+   | Supreme Secondary Learner Government (SSLG)
+   | SUBJECT:
+   | MANDATORY ESTABLISHMENT AND IMPLEMENTATION OF STANDING COMMITTEES IN THE SCHOOL SUPREME SECONDARY LEARNER GOVE
+   | DATE: May 25, 2026
+   | Pursuant to Division Memorandum OM-DFSSLG-2026-002 and in alignment with the directives of the Division and Cl
+   | This initiative is undertaken to establish a structured, accountable, and efficient system of governance withi
+   | The SSLG shall adopt the following Standing Committees: Executive Committee (EXECOM), Internal Affairs Committ
+   | Policy Management Committee. This structure shall serve as the standard organizational system of the SSLG.
+   | All officers are expected to actively perform their assigned roles and responsibilities, including managing me
+last 12 lines:
+   | Evaluate concerns and determine appropriate actions based on existing policies.
+   | Provide policy and legal basis for decisions, actions, and recommendations, ensuring alignment with school rul
+   | Coordinate with school authorities regarding student-related issues.
+   | Recommend appropriate interventions and resolutions.
+   | Assist in implementing and disseminating learner-related policies.
+   | Promote student welfare, discipline, inclusivity, and protection.
+   | OPERATIONAL GUIDELINES
+   | Committees shall conduct regular meetings and submit reports.
+   | All actions and recommendations of committees shall be subject to deliberation and approval by the body.
+   | Transparency, collaboration, and accountability shall be observed in all committee undertakings.
+   | EFFECTIVITY
+   | This Memorandum shall take effect immediately upon issuance and shall remain in force for S.Y. 2026–2027 unles
+key hits:
+   '001': 3 line(s)
+       > No. 001, s. 2026
+       > OM-SSLG-2026-001 - SUPREME SECONDARY LEARNER GOVERNMENT S.Y. 2026-2027 STANDING COMMITTEES AND ITS COMPOSITION
+       > OM-SSLG-2026-001 - GUIDELINES FOR THE LEARNER GOVERNMENT COORDINATING COUNCIL ESTABLISHMENT OF STANDING COMMITTEES AND T
+   'Chairperson': 19 line(s)
+       > Chairperson, Learner Government Coordinating Council (LGCC) President
+       > Chairperson
+       > Co-Chairperson
+       > Chairperson
+       > Chairperson
+       > Chairperson
+   'President': 6 line(s)
+       > FOR:VICE PRESIDENTSECRETARYTREASURERAUDITORPUBLIC INFORMATION OFFICERPROTOCOL OFFICERGRADE-LEVEL REPRESENTATIVESALL OTHE
+       > Chairperson, Learner Government Coordinating Council (LGCC) President
+       > The SSLG President shall issue a local school memorandum or resolution to guide the student body, class officers, and SS
+       > The SSLG Vice President shall oversee the organization of these school-based committees, while ensuring an equitable dis
+       > The Executive Committee shall compose of the President as the Chairperson, Vice President as the Co-Chairperson, Secreta
+       > The Internal Affairs Committee shall compose of the Vice President as the Chairperson, Secretary as the Secretary Genera
+   's. 2026': 1 line(s)
+       > No. 001, s. 2026
+   'MEMORANDUM': 4 line(s)
+       > MEMORANDUM
+       > Pursuant to Division Memorandum OM-DFSSLG-2026-002 and in alignment with the directives of the Division and Cluster Fede
+       > The SSLG President shall issue a local school memorandum or resolution to guide the student body, class officers, and SS
+       > This Memorandum shall take effect immediately upon issuance and shall remain in force for S.Y. 2026–2027 unless otherwis
+   'MAY': 2 line(s)
+       > DATE: May 25, 2026
+       > As an alternative, the Chairperson may open committee positions to interested Representatives, subject to a screening pr
+   'May': 2 line(s)
+       > DATE: May 25, 2026
+       > As an alternative, the Chairperson may open committee positions to interested Representatives, subject to a screening pr
+====================================================================================================
+FILE: 03 Governance/Sources/OM_SSLG_2026_001 (8).docx chars: 10520
+first 14 lines:
+   | MEMORANDUM
+   | No. 001, s. 2026
+   | FOR:VICE PRESIDENTSECRETARYTREASURERAUDITORPUBLIC INFORMATION OFFICERPROTOCOL OFFICERGRADE-LEVEL REPRESENTATIV
+   | FROM: Hon. RHIAN JADE L. CASTRO
+   | Chairperson, Learner Government Coordinating Council (LGCC) President Supreme Secondary Learner Government (SS
+   | SUBJECT:
+   | MANDATORY ESTABLISHMENT AND IMPLEMENTATION OF STANDING COMMITTEES IN THE SCHOOL SUPREME SECONDARY LEARNER GOVE
+   | DATE: May 27, 2026
+   | Pursuant to Division Memorandum OM-DFSSLG-2026-002 and in alignment with the directives of the Division and Cl
+   | This initiative is undertaken to establish a structured, accountable, and efficient system of governance withi
+   | The SSLG shall adopt the following Standing Committees: Executive Committee (EXECOM), Internal Affairs Committ
+   | Management Committee. This structure shall serve as the standard organizational system of the SSLG.
+   | All officers are expected to actively perform their assigned roles and responsibilities, including managing me
+   | All committees shall proceed with their organization and begin performing their respective functions upon desi
+last 12 lines:
+   | OPERATIONAL GUIDELINES
+   | Committees shall conduct regular meetings and submit reports.
+   | All actions and recommendations of committees shall be subject to deliberation and approval by the body.
+   | Transparency, collaboration, and accountability shall be observed in all committee undertakings.
+   | EFFECTIVITY
+   | This Memorandum shall take effect immediately upon issuance and shall remain in force for S.Y. 2026–2027 unles
+   | Prepared by:
+   | RHIAN JADE L. CASTROSSLG President
+   | Reviewed and Evaluated by:
+   | AARON KHRISTIAN T. BANAGSSLG Adviser
+   | Concurred:
+   | AMPARO M. MUÑOZ, EDDPrincipal IV
+key hits:
+   '001': 3 line(s)
+       > No. 001, s. 2026
+       > OM-SSLG-2026-001 - SUPREME SECONDARY LEARNER GOVERNMENT S.Y. 2026-2027 STANDING COMMITTEES AND ITS COMPOSITION
+       > OM-SSLG-2026-001 - GUIDELINES FOR THE LEARNER GOVERNMENT COORDINATING COUNCIL ESTABLISHMENT OF STANDING COMMITTEES AND T
+   's. 2026': 1 line(s)
+       > No. 001, s. 2026
+   'DATE': 2 line(s)
+       > DATE: May 27, 2026
+       > Provide performance updates to leadership.
+   'May': 1 line(s)
+       > DATE: May 27, 2026
+====================================================================================================
+FILE: 02 Activities/National Students Day 2026/Sources/AP_SSLG_2026_007_AnnexD_proofread.docx chars: 21465
+first 14 lines:
+   | ACTIVITY PROPOSAL
+   | ACTIVITY TITLE:
+   | 2026 National Students’ Day CelebrationTheme: Beyond Limits, Beyond Ordinary: The Aquinian Spirit
+   | Venue: Benigno S. Aquino National High SchoolDate: November 17–18, 2026
+   | RATIONALE:
+   | The celebration of National Students’ Day is anchored on Republic Act No. 11369, otherwise known as the “Natio
+   | In support of Section 4 of RA No. 11369, which encourages schools to extend their full support to student-led 
+   | OBJECTIVE:
+   | This activity aims to celebrate and recognize students’ talents, creativity, and contributions through competi
+   | ACTIVITY:
+   | TIME
+   | ACTIVITY
+   | PERSON IN-CHARGE
+   | 7:00 AM – 7:30 AM
+last 12 lines:
+   | 100
+   | III. MATERIALS NEEDED
+   | Tickets
+   | Certificates
+   | Prizes
+   | IV. LIST OF AWARDS
+   | Best Male Zumba Performer
+   | Best Female Zumba Performer
+   | Best in Zumba Stage Presence
+   | Best in Zumba Dance Execution
+   | Best in Zumba Attire
+   | Best in Zumba Facial Expression
+key hits:
+   'AP': 18 line(s)
+       > In support of Section 4 of RA No. 11369, which encourages schools to extend their full support to student-led activities
+       > School MOOE, subject to approval and availability
+       > Recommending Approval:
+       > Approved by:
+       > Participants may use appropriate art materials for their banners. The use of recycled or eco-friendly materials is encou
+       > Each banner must clearly and effectively convey the theme, “Beyond Limits, Beyond Ordinary: The Aquinian Spirit”, throug
+   '007': 0 line(s)
+   'SSLG': 21 line(s)
+       > Micaella Sabelle R. Monloy, SSLG Secretary
+       > SSLG Officers and Club/Organization Representatives
+       > School Administration and SSLG Officers
+       > Aaron Y. Hernandez, SSLG Vice President
+       > Supreme Secondary Learner Government (SSLG) and School Parent-Teacher Association (SPTA)
+       > Expenses to be incurred in the conduct of the activity shall be funded through SSLG funds, other available school funds,
+   'November': 4 line(s)
+       > Venue: Benigno S. Aquino National High SchoolDate: November 17–18, 2026
+       > The celebration of National Students’ Day is anchored on Republic Act No. 11369, otherwise known as the “National Studen
+       > Banners shall be presented by the club or organization representatives during the Presentation of Club and Organization 
+       > The Zumba session shall be held on Day 1 of the celebration, November 17, 2026, from 3:00 PM to 5:00 PM.
+   'DATE': 5 line(s)
+       > Venue: Benigno S. Aquino National High SchoolDate: November 17–18, 2026
+       > Registration shall open on the date and time announced by the SSLG and shall close once all slots are filled or on the a
+       > Slots are limited to four (4) bands and shall be given on a first come, first served basis, based on the date and time a
+       > Registration shall open on the date and time announced by the SSLG and shall close once all slots are filled or on the a
+       > Slots are limited to three (3) participants and shall be given on a first come, first served basis, based on the date an
+   'Proposer': 0 line(s)
+====================================================================================================
+FILE: 02 Activities/Onto the Next - Leaders Induction 2026/Sources/ACR_SSLG_2026_006.docx chars: 3192
+first 14 lines:
+   | ACTIVITY COMPLETION REPORTSupreme Secondary Learner Government
+   | Title of the Activity:Onto the Next: Leaders’ Induction CeremonyDate:July 22, 2026Venue/Location:Multi-Purpose
+   | OBJECTIVES
+   | To formally introduce and recognize the newly elected student leaders of all clubs and organizations, along wi
+   | To instill a sense of responsibility, leadership, and commitment among the officers.
+   | To orient student leaders on their roles, duties, and expectations throughout the school year.
+   | To promote unity and teamwork within the student organization, particularly within the Learner Government Coor
+   | OUTCOMES ACHIEVED
+   | Successfully inducted the newly elected student leaders.
+   | Fostered collaboration among student organizations in conducting a meaningful leadership ceremony.
+   | Inspired student leaders to uphold responsible and service-oriented leadership through the messages delivered 
+   | NARRATIVE OF ACTIVITIES
+   | The program formally opened with an invocation, the singing of the Philippine National Anthem, and the opening
+   | CHALLENGES ENCOUNTERED
+last 12 lines:
+   | The program proceeded as scheduled despite the presentation layout issue, while the technical team maximized t
+   | RECOMMENDATIONS
+   | Conduct a comprehensive venue preparation checklist and coordination meeting prior to the event to ensure that
+   | Standardize presentation templates with readable fonts and appropriate layouts, and conduct a projector compat
+   | Hold a final technical rehearsal involving all committees to verify the functionality of audiovisual equipment
+   | DOCUMENTATION
+   | Prepared by:
+   | MICAELLA SABELLE R. MONLOYSSLG Secretary
+   | Reviewed by:
+   | AARON KHRISTIAN T. BANAGSSLG Adviser
+   | Noted by:
+   | AMPARO M. MUÑOZ, EDDPrincipal IV
+key hits:
+   'ACR': 0 line(s)
+   '006': 0 line(s)
+   'July': 1 line(s)
+       > Title of the Activity:Onto the Next: Leaders’ Induction CeremonyDate:July 22, 2026Venue/Location:Multi-Purpose HallOrgan
+   'DATE': 1 line(s)
+       > Title of the Activity:Onto the Next: Leaders’ Induction CeremonyDate:July 22, 2026Venue/Location:Multi-Purpose HallOrgan
+   'Report': 1 line(s)
+       > ACTIVITY COMPLETION REPORTSupreme Secondary Learner Government
+====================================================================================================
+FILE: 03 Governance/Sources/SSLG_Governance_Memorandum_OM-SSLG-IA-2026-001.docx chars: 5964
+first 14 lines:
+   | SUPREME STUDENT LEARNER GOVERNMENT
+   | [School Name] | S.Y. 2026–2027
+   | MEMORANDUM
+   | OFFICE REFERENCE NO.:  OM-SSLG-IA-2026-001
+   | FOR:  All Standing Committee Chairpersons (Publicity, Finance, Learner Welfare, and Secretariat Committees); A
+   | FROM:  Hon. Rhian Jade Lobo Castro, President, SSLG S.Y. 2026–2027
+   | SUBJECT:  IMPLEMENTATION OF THE SSLG GOVERNANCE OUTPUT STANDARDIZATION, DIGITAL ARCHIVING, AND MONITORING POLI
+   | DATE:  June 22, 2026
+   | 1. Legal Basis and Mandate
+   | This Memorandum is issued in accordance with and in faithful execution of SSLG Memorandum No. 1, Series of 202
+   | 2. Operational Framework, Committee Work Plans, and Scope of Execution
+   | To ensure the translation of the General Plan of Action (GPOA) into structured, committee-level deliverables, 
+   | The Planning Layer — Each committee shall break down GPOA directives into definitive, committee-specific daily
+   | The Implementation Layer — Committees shall execute their localized tasks, including graphics generation, poli
+last 12 lines:
+   | Messenger Communities — Official Communications Channel: A singular, pinned Messenger Community link with dedi
+   | Performance shall be measured objectively based on output completion percentages derived from documented submi
+   | 4. Point of Contact and Liaison Information
+   | For all inquiries, clarifications, and compliance-related concerns regarding this Memorandum and the policies 
+   | 5. Closing Directive
+   | This Memorandum is issued in the interest of organizational efficiency, accountability, and student governance
+   | For information and strict compliance.
+   | Prepared and Issued by:
+   | HON. RHIAN JADE LOBO CASTRO
+   | President, Supreme Student Learner Government
+   | [School Name] | S.Y. 2026–2027
+   | Office Reference: OM-SSLG-IA-2026-001  |  Issued: June 22, 2026  |  Internal Affairs Committee — SSLG
+key hits:
+   '001': 2 line(s)
+       > OFFICE REFERENCE NO.:  OM-SSLG-IA-2026-001
+       > Office Reference: OM-SSLG-IA-2026-001  |  Issued: June 22, 2026  |  Internal Affairs Committee — SSLG
+   'IA': 14 line(s)
+       > OFFICE REFERENCE NO.:  OM-SSLG-IA-2026-001
+       > FOR:  All Standing Committee Chairpersons (Publicity, Finance, Learner Welfare, and Secretariat Committees); All Executi
+       > FROM:  Hon. Rhian Jade Lobo Castro, President, SSLG S.Y. 2026–2027
+       > This Memorandum is issued in accordance with and in faithful execution of SSLG Memorandum No. 1, Series of 2026, issued 
+       > To ensure the translation of the General Plan of Action (GPOA) into structured, committee-level deliverables, all standi
+       > Google Drive — Legal Cloud Repository: All finalized Minutes of Meetings, Financial Reports, and audited accomplishment 
+   's. 2026': 0 line(s)
+   'June': 2 line(s)
+       > DATE:  June 22, 2026
+       > Office Reference: OM-SSLG-IA-2026-001  |  Issued: June 22, 2026  |  Internal Affairs Committee — SSLG
+   'DATE': 5 line(s)
+       > DATE:  June 22, 2026
+       > 1. Legal Basis and Mandate
+       > This Memorandum is issued in accordance with and in faithful execution of SSLG Memorandum No. 1, Series of 2026, issued 
+       > The Accountability Layer — All committees shall submit their required documentation to the Office of Internal Affairs, w
+       > Google Sites — Public Transparency Portal: The official SSLG website shall reflect the organization's real-time progress
+   'School Name': 2 line(s)
+       > [School Name] | S.Y. 2026–2027
+       > [School Name] | S.Y. 2026–2027
+====================================================================================================
+FILE: 04 External Memoranda/Sources/Memorandum-OM-NFSSLG-2026-001_signed-2.pdf chars: 16
+first 14 lines:
+last 12 lines:
+key hits:
+   'NFSSLG': 0 line(s)
+   '001': 0 line(s)
+   'August': 0 line(s)
+   'September': 0 line(s)
+   'date': 0 line(s)
+   'Date': 0 line(s)

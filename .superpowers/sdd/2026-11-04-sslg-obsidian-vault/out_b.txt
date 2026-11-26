@@ -1,0 +1,13 @@
+B0. markdown files on disk (vault scope, excl .obsidian): 60
+    declared record notes: 36 declared hubs: 16
+    on-disk md not declared and not known navigation: []
+    declared notes absent on disk: []
+B1. record notes checked: 36; problems so far: 0
+B2. hubs checked: 16; records checked: 36
+B3. TOTAL PROBLEMS: 4
+   - [om-cfsslg-2026-003] has activity digital-device-survey-2026 but filed at 04 External Memoranda/Cluster Federation Memorandum OM-CFSSLG-2026-003 - Nationwide Online Survey on Digital Device Use.md
+   - [om-dfsslg-2026-003] has activity brigada-eskwela-2026 but filed at 04 External Memoranda/Division Memorandum OM-DFSSLG-2026-003 - LGCC Mobilization for Brigada Eskwela 2026.md
+   - [om-dfsslg-2026-010] has activity digital-device-survey-2026 but filed at 04 External Memoranda/Division Memorandum OM-DFSSLG-2026-010 - Nationwide Online Survey on Digital Device Use in Schools.md
+   - [om-nfsslg-2026-001] has activity digital-device-survey-2026 but filed at 04 External Memoranda/National Federation Memorandum OM-NFSSLG-2026-001 - Nationwide Online Survey on Digital Device Use in Schools.md
+B4. activities with zero linked records: []
+B5. records per activity: {'brigada-eskwela-2026': 3, 'club-fair-2026': 1, 'grade7-representative-election-2026': 4, 'club-officers-election-2026': 1, 'gpoa-crafting-2026': 3, 'leaders-induction-2026': 2, 'project-ecolead-2026': 3, 'project-tinig-2026': 1, 'project-liwanag-2026': 1, 'foundation-day-2026': 1, 'world-teachers-day-2026': 1, 'national-students-day-2026': 1, 'cluster-iv-training-camp-2026': 2, 'short-film-festival-2026': 1, 'earthquake-drill-2026': 1, 'digital-device-survey-2026': 5}

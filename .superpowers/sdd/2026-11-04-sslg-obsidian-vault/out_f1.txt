@@ -1,0 +1,39 @@
+F1a. clean vault scope: md = 60 | base = 1
+
+F1b. inbound links (excluding self) for navigation and asset targets
+   inbound= 0 | 90 Archive/Archive Index.md | []
+   inbound= 0 | 99 Templates/Activity Template.md | []
+   inbound= 0 | 99 Templates/Record Template.md | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-1.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-2.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-3.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-4.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-5.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-6.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-7.png | []
+   inbound= 0 | 80 Assets/OM_SSLG_2026_001-8.png | []
+   inbound= 1 | 01 Dashboards/SSLG Records.base | ['01 Dashboards/Document Library.md']
+   inbound= 0 | START HERE.md | []
+
+F1c. text evidence for OM-NFSSLG-2026-001 (primary is image-only)
+   merged PDF extracted chars: 2054
+   contains 'OM-NFSSLG-2026-001': True
+   contains a 25 August date: True
+      ... ATIONWIDE ONLINE SURVEY ON DIGITAL DEVICE USE IN SCHOOLS DATE: AUGUST 28, 2026 1. In line with OM-NFSSLG-2026-001 dated 25 August 2026, titled "Nationwide Online Survey on Digital Device Use in 
+   primary signed PDF extracted chars: 0 (0 = image-only, matches note disclosure)
+
+F1d. number-collision disclosure in the ECOLEAD / survey notes
+   [om-sslg-2026-002-ecolead] disclosure lines: 0
+   [om-sslg-2026-002-survey-aug27] disclosure lines: 0
+   [om-sslg-2026-002-survey-aug28] disclosure lines: 0
+   [om-sslg-2026-003-ecolead] disclosure lines: 0
+
+F1e. needs-review coverage sets
+   records: status needs-review 6 | with reasons 8 | status-only (not in queue obligations) [] | reasons-only (other status) [('om-sslg-2026-001-draft-vp', 'draft'), ('om-sslg-ia-2026-001', 'final')]
+   activities: status needs-review 2 | with reasons 13 | reasons-only [('brigada-eskwela-2026', 'completed'), ('club-fair-2026', 'completed'), ('club-officers-election-2026', 'completed'), ('project-ecolead-2026', 'ongoing'), ('project-tinig-2026', 'ongoing'), ('project-liwanag-2026', 'ongoing'), ('foundation-day-2026', 'planned'), ('national-students-day-2026', 'planned'), ('short-film-festival-2026', 'completed'), ('earthquake-drill-2026', 'completed'), ('digital-device-survey-2026', 'ongoing')]
+   statuses of the reasons-only activities: {'completed': 5, 'ongoing': 4, 'planned': 2, 'needs-review': 2}
+
+F1f. do the 11 reasons-only activities appear in Review Queue headings?
+   queue '###' link headings: 21
+   flagged activities with no queue heading: []
+   flagged records with no queue heading: []

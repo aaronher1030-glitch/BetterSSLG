@@ -1,0 +1,190 @@
+diff -ruN -x node_modules "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-5-fix-1/preview/server.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/preview/server.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-5-fix-1/preview/server.cjs"	2026-11-24 15:22:28.000000000 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/preview/server.cjs"	2026-11-24 15:57:07.823744900 +0800
+@@ -34,11 +34,12 @@
+     }
+     if (request.method === 'POST' && request.url.startsWith('/api/')) {
+       const action = request.url.slice('/api/'.length);
+-      let raw = '';
+-      for await (const chunk of request) raw += chunk;
+-      const payload = JSON.parse(raw || '{}');
++      let payload;
+       let result;
+       try {
++        let raw = '';
++        for await (const chunk of request) raw += chunk;
++        payload = JSON.parse(raw || '{}');
+         if (action === 'admin.generate') {
+           const record = core.createDailyCodeRecord_(payload.date, new Date(), randomUUID);
+           state.codes.set(payload.date, {
+@@ -52,21 +53,26 @@
+           const validation = core.validateScan_(payload, code, new Date());
+           if (!validation.ok) result = validation;
+           else {
+-            const person = state.people.get(payload.device_token);
+-            if (action === 'scan.status') {
+-              result = { ok: true, date: payload.date, mode: payload.mode, name: person ? person.name : null, device_token: payload.device_token, qr_created_at: code.created_at };
+-            } else {
+-              const name = core.normalizeName_(person ? person.name : payload.name);
+-              const now = core.manilaTimestamp_(new Date());
+-              if (!person) state.people.set(payload.device_token, { name, first_seen_at: now, last_seen_at: now });
+-              else person.last_seen_at = now;
+-              const event = { event_id: randomUUID(), date: payload.date, scanned_at: now, mode: payload.mode.toUpperCase(), name, device_token: payload.device_token, qr_created_at: code.created_at };
+-              state.attendance.push(event);
+-              result = { ok: true, event };
++            const deviceToken = String(payload.device_token || '');
++            if (!deviceToken || deviceToken.length > 100) result = { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++            else {
++              const person = state.people.get(deviceToken);
++              if (action === 'scan.status') {
++                result = { ok: true, date: validation.date, mode: validation.mode, name: person ? person.name : null, device_token: deviceToken, qr_created_at: validation.qr_created_at };
++              } else {
++                const name = core.normalizeName_(person ? person.name : payload.name);
++                const now = core.manilaTimestamp_(new Date());
++                if (!person) state.people.set(deviceToken, { name, first_seen_at: now, last_seen_at: now });
++                else person.last_seen_at = now;
++                const event = { event_id: randomUUID(), date: validation.date, scanned_at: now, mode: validation.mode, name, device_token: deviceToken, qr_created_at: validation.qr_created_at };
++                state.attendance.push(event);
++                result = { ok: true, event };
++              }
+             }
+           }
+         } else if (action === 'admin.list') {
+-          const rows = state.attendance.filter(row => row.date === payload.date && (!payload.query || row.name.toLowerCase().includes(payload.query.toLowerCase()))).reverse();
++          const normalizedQuery = String(payload.query || '').trim().toLowerCase();
++          const rows = state.attendance.filter(row => row.date === payload.date && (!normalizedQuery || String(row.name).toLowerCase().includes(normalizedQuery))).reverse();
+           const all = state.attendance.filter(row => row.date === payload.date);
+           result = { ok: true, rows, totals: { scans: all.length, people: new Set(all.map(row => row.device_token)).size, in: all.filter(row => row.mode === 'IN').length, out: all.filter(row => row.mode === 'OUT').length } };
+         } else if (action === 'admin.export') {
+diff -ruN -x node_modules "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-5-fix-1/tests/preview.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/preview.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-5-fix-1/tests/preview.test.cjs"	2026-11-24 15:21:59.000000000 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/preview.test.cjs"	2026-11-24 15:53:41.080991200 +0800
+@@ -6,7 +6,11 @@
+   const server = createPreviewServer();
+   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+   const base = `http://127.0.0.1:${server.address().port}`;
+-  try { await run(base); } finally { await new Promise(resolve => server.close(resolve)); }
++  try { await run(base); } finally {
++    const closed = new Promise(resolve => server.close(resolve));
++    server.closeAllConnections();
++    await closed;
++  }
+ }
+ 
+ async function post(base, action, payload) {
+@@ -16,6 +20,15 @@
+   return response.json();
+ }
+ 
++async function generateForToday(base) {
++  const date = new Intl.DateTimeFormat('en-CA', {
++    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++  }).format(new Date());
++  const generated = await post(base, 'admin.generate', { date });
++  assert.equal(generated.ok, true);
++  return { date, record: generated.record };
++}
++
+ test('renders all include files without scriptlet placeholders', async () => {
+   await withServer(async base => {
+     const html = await (await fetch(base)).text();
+@@ -69,3 +82,99 @@
+     assert.match(exported.csv, /"Ana Cruz"/);
+   });
+ });
++
++test('preview returns a JSON error for malformed request bodies', async () => {
++  await withServer(async base => {
++    const response = await fetch(`${base}/api/admin.list`, {
++      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"date":',
++      signal: AbortSignal.timeout(2000)
++    });
++    assert.equal(response.status, 200);
++    assert.match(response.headers.get('content-type'), /^application\/json/);
++    const result = await response.json();
++    assert.equal(result.ok, false);
++    assert.equal(typeof result.error, 'string');
++    assert.ok(result.error.length > 0);
++    assert.deepEqual(await post(base, 'admin.list', {}), {
++      ok: true, rows: [], totals: { scans: 0, people: 0, in: 0, out: 0 }
++    });
++  });
++});
++
++test('preview scan handlers reject missing device tokens without writing attendance', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    const payload = { date, mode: 'IN', code: record.in_code, name: 'Ana Cruz' };
++    const results = [];
++    for (const action of ['scan.status', 'scan.record']) {
++      results.push(await post(base, action, payload));
++    }
++    assert.deepEqual(results, [
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' },
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' }
++    ]);
++    const list = await post(base, 'admin.list', { date });
++    assert.equal(list.totals.scans, 0);
++    assert.equal(list.totals.people, 0);
++  });
++});
++
++test('preview scan handlers reject 101-character device tokens without writing attendance', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    const payload = {
++      date, mode: 'IN', code: record.in_code,
++      device_token: 'x'.repeat(101), name: 'Ana Cruz'
++    };
++    const results = [];
++    for (const action of ['scan.status', 'scan.record']) {
++      results.push(await post(base, action, payload));
++    }
++    assert.deepEqual(results, [
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' },
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' }
++    ]);
++    const list = await post(base, 'admin.list', { date });
++    assert.equal(list.totals.scans, 0);
++    assert.equal(list.totals.people, 0);
++  });
++});
++
++test('preview accepts 100-character device tokens and returns validated scan status fields', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    const deviceToken = 'x'.repeat(100);
++    const recorded = await post(base, 'scan.record', {
++      date, mode: 'in', code: record.in_code, device_token: deviceToken, name: 'Ana Cruz'
++    });
++    assert.equal(recorded.ok, true);
++    const status = await post(base, 'scan.status', {
++      date, mode: 'out', code: record.out_code, device_token: deviceToken
++    });
++    assert.deepEqual(status, {
++      ok: true, date, mode: 'OUT', name: 'Ana Cruz',
++      device_token: deviceToken, qr_created_at: record.created_at
++    });
++  });
++});
++
++test('preview search trims and stringifies queries like the backend', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    for (const [device_token, name] of [
++      ['search-device-1', 'Ana Cruz'],
++      ['search-device-2', 'Agent 42']
++    ]) {
++      const recorded = await post(base, 'scan.record', {
++        date, mode: 'IN', code: record.in_code, device_token, name
++      });
++      assert.equal(recorded.ok, true);
++    }
++    const whitespace = await post(base, 'admin.list', { date, query: '  ANA  ' });
++    const nonString = await post(base, 'admin.list', { date, query: 42 });
++    assert.deepEqual({
++      whitespace: (whitespace.rows || []).map(row => row.name),
++      nonString: (nonString.rows || []).map(row => row.name)
++    }, { whitespace: ['Ana Cruz'], nonString: ['Agent 42'] });
++  });
++});

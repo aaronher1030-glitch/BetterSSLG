@@ -1,0 +1,4481 @@
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/.gitignore ./.gitignore
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/.gitignore	1970-01-01 08:00:00.000000000 +0800
++++ ./.gitignore	2026-11-24 13:30:53.654312400 +0800
+@@ -0,0 +1,5 @@
++node_modules/
++.env
++.env.*
++*.log
++.DS_Store
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Client.html ./Client.html
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Client.html	1970-01-01 08:00:00.000000000 +0800
++++ ./Client.html	2026-11-24 14:54:10.268342400 +0800
+@@ -0,0 +1,314 @@
++<script>
++const SERVER_ACTIONS = {
++  'scan.status': 'scanStatus',
++  'scan.record': 'scanRecord',
++  'admin.generate': 'adminGenerate',
++  'admin.list': 'adminList',
++  'admin.export': 'adminExport'
++};
++
++async function api(action, payload = {}) {
++  if (window.google && window.google.script && window.google.script.run) {
++    return new Promise((resolve, reject) => {
++      window.google.script.run
++        .withSuccessHandler(resolve)
++        .withFailureHandler(error => reject(new Error(error && error.message ? error.message : 'APPS_SCRIPT_FAILED')))
++        [SERVER_ACTIONS[action]](payload);
++    });
++  }
++  const response = await fetch(`/api/${action}`, {
++    method: 'POST',
++    headers: { 'Content-Type': 'application/json' },
++    body: JSON.stringify(payload)
++  });
++  const data = await response.json();
++  if (!response.ok || !data.ok) throw new Error(data.error || 'REQUEST_FAILED');
++  return data;
++}
++
++function getDeviceToken_() {
++  const key = 'sslg.attendance.device.v1';
++  const existing = localStorage.getItem(key);
++  if (existing) return existing;
++  let token;
++  if (window.crypto && window.crypto.randomUUID) {
++    token = window.crypto.randomUUID();
++  } else {
++    const bytes = new Uint8Array(24);
++    window.crypto.getRandomValues(bytes);
++    token = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
++  }
++  localStorage.setItem(key, token);
++  return token;
++}
++
++const ERROR_MESSAGES = {
++  NAME_REQUIRED: 'Please enter your name.',
++  NAME_TOO_LONG: 'Please use a name of 80 characters or fewer.',
++  DEVICE_TOKEN_REQUIRED: 'This browser could not create a device token. Enable site storage and try again.',
++  INVALID_REQUEST: 'This QR link is incomplete or invalid.',
++  CODE_NOT_FOUND: 'This code is not registered. Ask the SSLG office for today’s code.',
++  WRONG_DATE: 'This QR code belongs to a different date.',
++  CODE_EXPIRED: 'This QR code has expired. Ask the SSLG office for today’s code.',
++  INVALID_CODE: 'This QR code is no longer valid. A newer code may have been generated.',
++  MODE_MISMATCH: 'This is not the correct code for this attendance action.',
++  SPREADSHEET_NOT_CONFIGURED: 'The attendance Sheet is not configured yet. Please contact the SSLG office.',
++  SHEET_BUSY: 'The office Sheet is busy. Please try again in a moment.',
++  REQUEST_FAILED: 'The scan was not recorded. Check your connection and try again.',
++  APPS_SCRIPT_FAILED: 'The scan was not recorded. Check your connection and try again.'
++};
++
++function errorMessage_(error) {
++  return ERROR_MESSAGES[error && error.message] || ERROR_MESSAGES.REQUEST_FAILED;
++}
++
++function scanParams_() {
++  return {
++    date: new URLSearchParams(location.search).get('date'),
++    mode: new URLSearchParams(location.search).get('mode'),
++    code: new URLSearchParams(location.search).get('code')
++  };
++}
++
++async function renderScanPage_(params) {
++  const app = document.getElementById('app');
++  let deviceToken;
++  try {
++    deviceToken = getDeviceToken_();
++  } catch (error) {
++    app.innerHTML = `<section class="card"><p class="notice notice-error">${errorMessage_({ message: 'DEVICE_TOKEN_REQUIRED' })}</p></section>`;
++    return;
++  }
++  let status;
++  try {
++    status = await api('scan.status', { ...params, device_token: deviceToken });
++  } catch (error) {
++    app.innerHTML = `<section class="card"><p class="notice notice-error">${errorMessage_(error)}</p></section>`;
++    return;
++  }
++  if (!status.ok) {
++    app.innerHTML = `<section class="card"><p class="notice notice-error">${errorMessage_({ message: status.error })}</p></section>`;
++    return;
++  }
++  const isIn = status.mode === 'IN';
++  app.innerHTML = `
++    <section class="card scan-card">
++      <p class="eyebrow">${isIn ? 'Check in' : 'Check out'}</p>
++      <h2>${isIn ? 'Record your arrival' : 'Record your departure'}</h2>
++      <p class="scan-meta">${escapeHtml_(status.date)} · SSLG Office</p>
++      ${status.name ? `
++        <p class="welcome">Continuing as</p>
++        <p class="registered-name">${escapeHtml_(status.name)}</p>
++        <button id="confirm-scan" class="button ${isIn ? 'button-primary' : 'button-out'}">Confirm ${isIn ? 'check in' : 'check out'}</button>
++      ` : `
++        <form id="registration-form">
++          <label class="field">Your name
++            <input name="name" autocomplete="name" maxlength="80" required placeholder="Enter your full name">
++          </label>
++          <button class="button ${isIn ? 'button-primary' : 'button-out'}" type="submit">Register and ${isIn ? 'check in' : 'check out'}</button>
++          <p class="helper-text">You only need to enter your name once on this phone.</p>
++        </form>
++      `}
++      <p id="scan-error" class="notice notice-error" hidden></p>
++    </section>`;
++
++  const submit = name => submitScan_(params, deviceToken, name);
++  const form = document.getElementById('registration-form');
++  if (form) {
++    form.addEventListener('submit', event => {
++      event.preventDefault();
++      submit(new FormData(form).get('name'));
++    });
++  }
++  const confirm = document.getElementById('confirm-scan');
++  if (confirm) confirm.addEventListener('click', () => submit(status.name));
++}
++
++async function submitScan_(params, deviceToken, name) {
++  const button = document.querySelector('#app button');
++  const errorBox = document.getElementById('scan-error');
++  if (button) button.disabled = true;
++  if (errorBox) errorBox.hidden = true;
++  try {
++    const result = await api('scan.record', { ...params, device_token: deviceToken, name });
++    if (!result.ok) throw new Error(result.error);
++    const event = result.event;
++    document.getElementById('app').innerHTML = `
++      <section class="card success-card" aria-live="polite">
++        <div class="success-mark" aria-hidden="true">OK</div>
++        <p class="eyebrow">Recorded</p>
++        <h2>${event.mode === 'IN' ? 'Checked in' : 'Checked out'}</h2>
++        <p class="registered-name">${escapeHtml_(event.name)}</p>
++        <p class="scan-meta">${escapeHtml_(event.scanned_at)} · Philippines time</p>
++        <p class="helper-text">You may close this page.</p>
++      </section>`;
++  } catch (error) {
++    if (button) button.disabled = false;
++    if (errorBox) {
++      errorBox.textContent = errorMessage_(error);
++      errorBox.hidden = false;
++    }
++  }
++}
++
++function escapeHtml_(value) {
++  return String(value == null ? '' : value)
++    .replace(/&/g, '&amp;')
++    .replace(/</g, '&lt;')
++    .replace(/>/g, '&gt;')
++    .replace(/"/g, '&quot;')
++    .replace(/'/g, '&#039;');
++}
++
++function renderLandingPage_() {
++  document.getElementById('app').innerHTML = `
++    <section class="card scan-card">
++      <p class="eyebrow">SSLG Office</p>
++      <h2>Scan to record attendance</h2>
++      <p>Use your phone camera to scan today’s check-in or check-out QR code posted by the office.</p>
++      <p class="helper-text">First time here? You will be asked for your name once. This phone will remember it for later scans.</p>
++    </section>`;
++}
++
++function defaultAdminDate_() {
++  return new Intl.DateTimeFormat('en-CA', {
++    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++  }).format(new Date());
++}
++
++function qrDataUrl_(value) {
++  const qr = window.qrcode(0, 'M');
++  qr.addData(value);
++  qr.make();
++  return qr.createDataURL(8, 4);
++}
++
++let adminGenerateRequest_ = 0;
++let adminListRequest_ = 0;
++
++async function renderAdminPage_() {
++  adminGenerateRequest_ += 1;
++  adminListRequest_ += 1;
++  const app = document.getElementById('app');
++  app.innerHTML = `
++    <section class="card admin-card">
++      <p class="eyebrow">Office tools</p>
++      <h2>Daily QR codes</h2>
++      <p class="helper-text">Generating a new pair invalidates the old pair for this date.</p>
++      <label class="field">Attendance date
++        <input id="admin-date" type="date" value="${defaultAdminDate_()}">
++      </label>
++      <button id="generate-codes" class="button button-primary">Generate QR pair</button>
++      <p id="admin-error" class="notice notice-error" role="alert" hidden></p>
++      <div id="qr-pair" class="admin-grid" aria-live="polite" hidden></div>
++    </section>
++    <section class="card admin-card">
++      <p class="eyebrow">Shared Sheet</p>
++      <h2>Attendance records</h2>
++      <label class="field">Search name
++        <input id="attendance-search" type="search" placeholder="Search registered names">
++      </label>
++      <div id="attendance-totals" class="totals" aria-live="polite"></div>
++      <div class="table-wrap" tabindex="0" role="region" aria-label="Attendance records"><table class="attendance-table"><thead><tr><th>Time</th><th>Name</th><th>Action</th></tr></thead><tbody id="attendance-body"></tbody></table></div>
++      <button id="export-csv" class="button">Export CSV</button>
++    </section>`;
++
++  const dateInput = document.getElementById('admin-date');
++  const searchInput = document.getElementById('attendance-search');
++  document.getElementById('generate-codes').addEventListener('click', () => generateCodes_(dateInput.value).catch(showAdminError_));
++  dateInput.addEventListener('change', () => {
++    adminGenerateRequest_ += 1;
++    document.getElementById('generate-codes').disabled = false;
++    const qrPair = document.getElementById('qr-pair');
++    qrPair.hidden = true;
++    qrPair.innerHTML = '';
++    loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_);
++  });
++  searchInput.addEventListener('input', () => loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_));
++  document.getElementById('export-csv').addEventListener('click', () => downloadCsv_(dateInput.value).catch(showAdminError_));
++  await loadAttendance_(dateInput.value, '').catch(showAdminError_);
++}
++
++function clearAdminError_() {
++  const errorBox = document.getElementById('admin-error');
++  if (!errorBox) return;
++  errorBox.textContent = '';
++  errorBox.hidden = true;
++}
++
++function showAdminError_(error) {
++  const errorBox = document.getElementById('admin-error');
++  if (!errorBox) return;
++  const isRequestFailure = error && (error.message === 'REQUEST_FAILED' || error.message === 'APPS_SCRIPT_FAILED');
++  errorBox.textContent = isRequestFailure
++    ? 'The office request could not be completed. Check your connection and try again.'
++    : errorMessage_(error);
++  errorBox.hidden = false;
++}
++
++async function generateCodes_(dateKey) {
++  const button = document.getElementById('generate-codes');
++  if (button.disabled || !confirm('Generate new IN and OUT codes? The previous pair for this date will stop working.')) return;
++  const request = ++adminGenerateRequest_;
++  clearAdminError_();
++  button.disabled = true;
++  try {
++    const result = await api('admin.generate', { date: dateKey });
++    if (request !== adminGenerateRequest_ || document.getElementById('admin-date').value !== dateKey) return;
++    if (!result.ok) throw new Error(result.error);
++    const record = result.record;
++    if (record.date !== dateKey) return;
++    document.getElementById('qr-pair').innerHTML = `
++      <article class="qr-card qr-in"><p class="eyebrow">Check in</p><img alt="Check-in QR code" src="${qrDataUrl_(record.in_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>
++      <article class="qr-card qr-out"><p class="eyebrow">Check out</p><img alt="Check-out QR code" src="${qrDataUrl_(record.out_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>`;
++    document.getElementById('qr-pair').hidden = false;
++    await loadAttendance_(dateKey, document.getElementById('attendance-search').value);
++  } catch (error) {
++    if (request === adminGenerateRequest_ && document.getElementById('admin-date').value === dateKey) showAdminError_(error);
++  } finally {
++    if (request === adminGenerateRequest_) button.disabled = false;
++  }
++}
++
++async function loadAttendance_(dateKey, query) {
++  const request = ++adminListRequest_;
++  clearAdminError_();
++  try {
++    const result = await api('admin.list', { date: dateKey, query });
++    if (request !== adminListRequest_ || document.getElementById('admin-date').value !== dateKey || document.getElementById('attendance-search').value !== query) return;
++    if (!result.ok) throw new Error(result.error);
++    document.getElementById('attendance-totals').innerHTML = `
++      <div><strong>${result.totals.scans}</strong><span>Scans</span></div>
++      <div><strong>${result.totals.people}</strong><span>People</span></div>
++      <div><strong>${result.totals.in}</strong><span>IN</span></div>
++      <div><strong>${result.totals.out}</strong><span>OUT</span></div>`;
++    document.getElementById('attendance-body').innerHTML = result.rows.length
++      ? result.rows.map(row => `<tr><td>${escapeHtml_(row.scanned_at)}</td><td>${escapeHtml_(row.name)}</td><td><span class="mode mode-${row.mode === 'IN' ? 'in' : 'out'}">${escapeHtml_(row.mode)}</span></td></tr>`).join('')
++      : '<tr><td colspan="3">No scans recorded for this date.</td></tr>';
++  } catch (error) {
++    if (request === adminListRequest_ && document.getElementById('admin-date').value === dateKey && document.getElementById('attendance-search').value === query) throw error;
++  }
++}
++
++async function downloadCsv_(dateKey) {
++  clearAdminError_();
++  const result = await api('admin.export', { date: dateKey });
++  if (!result.ok) throw new Error(result.error);
++  const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8' });
++  const url = URL.createObjectURL(blob);
++  const link = document.createElement('a');
++  link.href = url;
++  link.download = result.filename;
++  document.body.appendChild(link);
++  link.click();
++  link.remove();
++  setTimeout(() => URL.revokeObjectURL(url), 0);
++}
++
++document.addEventListener('DOMContentLoaded', () => {
++  const page = new URLSearchParams(location.search).get('page');
++  if (page === 'admin') renderAdminPage_();
++  else if (page === 'scan') renderScanPage_(scanParams_());
++  else renderLandingPage_();
++});
++</script>
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Code.gs ./Code.gs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Code.gs	1970-01-01 08:00:00.000000000 +0800
++++ ./Code.gs	2026-11-24 13:47:29.919193500 +0800
+@@ -0,0 +1,243 @@
++function getConfig_() {
++  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
++  if (!spreadsheetId) throw new Error('SPREADSHEET_NOT_CONFIGURED');
++  return { spreadsheetId };
++}
++
++function openSpreadsheet_() {
++  return SpreadsheetApp.openById(getConfig_().spreadsheetId);
++}
++
++function ensureSheet_(spreadsheet, name, headers) {
++  let sheet = spreadsheet.getSheetByName(name);
++  if (!sheet) sheet = spreadsheet.insertSheet(name);
++  if (sheet.getLastRow() === 0) {
++    sheet.getRange(1, 1, headers.length).setValues([headers]);
++    sheet.setFrozenRows(1);
++  }
++  return sheet;
++}
++
++function ensureSchema_() {
++  const spreadsheet = openSpreadsheet_();
++  ensureSheet_(spreadsheet, 'Daily Codes', DAILY_CODE_HEADERS);
++  ensureSheet_(spreadsheet, 'People', PEOPLE_HEADERS);
++  ensureSheet_(spreadsheet, 'Attendance', ATTENDANCE_HEADERS);
++}
++
++function sheetRows_(sheet) {
++  const lastRow = sheet.getLastRow();
++  if (lastRow < 2) return [];
++  const values = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
++  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
++  return values.map(row => Object.fromEntries(headers.map((header, index) => [header, row[index]])));
++}
++
++function getDailyCodeRecord_(dateKey) {
++  ensureSchema_();
++  const rows = sheetRows_(openSpreadsheet_().getSheetByName('Daily Codes'));
++  return rows.find(row => row.date === dateKey) || null;
++}
++
++function getWebAppUrl_() {
++  return ScriptApp.getService().getUrl();
++}
++
++function generateDailyCodes_(dateKey) {
++  const lock = LockService.getScriptLock();
++  if (!lock.tryLock(10000)) throw new Error('SHEET_BUSY');
++  try {
++    ensureSchema_();
++    const spreadsheet = openSpreadsheet_();
++    const sheet = spreadsheet.getSheetByName('Daily Codes');
++    const rows = sheetRows_(sheet);
++    const existingIndex = rows.findIndex(row => row.date === dateKey);
++    const record = createDailyCodeRecord_(dateKey, new Date(), () => Utilities.getUuid());
++    const values = DAILY_CODE_HEADERS.map(header => record[header]);
++    if (existingIndex >= 0) {
++      sheet.getRange(existingIndex + 2, 1, 1, values.length).setValues([values]);
++    } else {
++      sheet.appendRow(values);
++    }
++    const baseUrl = getWebAppUrl_();
++    return {
++      ...record,
++      in_url: `${baseUrl}?page=scan&date=${encodeURIComponent(dateKey)}&mode=IN&code=${encodeURIComponent(record.in_code)}`,
++      out_url: `${baseUrl}?page=scan&date=${encodeURIComponent(dateKey)}&mode=OUT&code=${encodeURIComponent(record.out_code)}`
++    };
++  } finally {
++    lock.releaseLock();
++  }
++}
++
++function findPersonByToken_(deviceToken) {
++  ensureSchema_();
++  const rows = sheetRows_(openSpreadsheet_().getSheetByName('People'));
++  return rows.find(row => row.device_token === deviceToken) || null;
++}
++
++function upsertPerson_(deviceToken, name, now) {
++  const spreadsheet = openSpreadsheet_();
++  const sheet = spreadsheet.getSheetByName('People');
++  const rows = sheetRows_(sheet);
++  const existingIndex = rows.findIndex(row => row.device_token === deviceToken);
++  if (existingIndex >= 0) {
++    const existing = rows[existingIndex];
++    sheet.getRange(existingIndex + 2, 1, 1, PEOPLE_HEADERS.length).setValues([[
++      deviceToken,
++      name,
++      existing.first_seen_at,
++      manilaTimestamp_(now)
++    ]]);
++  } else {
++    sheet.appendRow([deviceToken, name, manilaTimestamp_(now), manilaTimestamp_(now)]);
++  }
++}
++
++function getScanStatus_(params) {
++  const record = getDailyCodeRecord_(String(params.date || ''));
++  const validation = validateScan_(params, record, new Date());
++  if (!validation.ok) return validation;
++  const deviceToken = String(params.device_token || '');
++  if (!deviceToken) return { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++  const person = findPersonByToken_(deviceToken);
++  return {
++    ok: true,
++    date: validation.date,
++    mode: validation.mode,
++    name: person ? person.name : null,
++    device_token: deviceToken,
++    qr_created_at: validation.qr_created_at
++  };
++}
++
++function recordScan_(params) {
++  const lock = LockService.getScriptLock();
++  if (!lock.tryLock(10000)) throw new Error('SHEET_BUSY');
++  try {
++    const record = getDailyCodeRecord_(String(params.date || ''));
++    const validation = validateScan_(params, record, new Date());
++    if (!validation.ok) return validation;
++    const deviceToken = String(params.device_token || '');
++    if (!deviceToken || deviceToken.length > 100) return { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++    const now = new Date();
++    const existing = findPersonByToken_(deviceToken);
++    const name = normalizeName_(existing ? existing.name : params.name);
++    upsertPerson_(deviceToken, name, now);
++    const event = {
++      event_id: Utilities.getUuid(),
++      date: validation.date,
++      scanned_at: manilaTimestamp_(now),
++      mode: validation.mode,
++      name,
++      device_token: deviceToken,
++      qr_created_at: validation.qr_created_at
++    };
++    openSpreadsheet_().getSheetByName('Attendance').appendRow(
++      ATTENDANCE_HEADERS.map(header => event[header])
++    );
++    return { ok: true, event };
++  } finally {
++    lock.releaseLock();
++  }
++}
++
++function filteredAttendance_(dateKey, query) {
++  ensureSchema_();
++  const rows = sheetRows_(openSpreadsheet_().getSheetByName('Attendance'));
++  const normalizedQuery = String(query || '').trim().toLowerCase();
++  return rows
++    .filter(row => row.date === dateKey)
++    .filter(row => !normalizedQuery || String(row.name).toLowerCase().includes(normalizedQuery))
++    .sort((a, b) => String(b.scanned_at).localeCompare(String(a.scanned_at)));
++}
++
++function listAttendance_(dateKey, query) {
++  const rows = filteredAttendance_(dateKey, query);
++  const allRows = filteredAttendance_(dateKey, '');
++  return {
++    ok: true,
++    rows,
++    totals: {
++      in: allRows.filter(row => row.mode === 'IN').length,
++      out: allRows.filter(row => row.mode === 'OUT').length,
++      people: new Set(allRows.map(row => row.device_token)).size,
++      scans: allRows.length
++    }
++  };
++}
++
++function exportAttendanceCsv_(dateKey) {
++  const rows = filteredAttendance_(dateKey, '');
++  return {
++    ok: true,
++    csv: toCsv_(ATTENDANCE_HEADERS, rows.map(row => ATTENDANCE_HEADERS.map(header => row[header]))),
++    filename: `SSLG-attendance-${dateKey}.csv`
++  };
++}
++
++function jsonResponse_(payload) {
++  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
++}
++
++function errorCode_(error) {
++  return error && error.message ? error.message : 'REQUEST_FAILED';
++}
++
++function doPost(event) {
++  try {
++    const body = JSON.parse(event.postData.contents);
++    const payload = body.payload || {};
++    let result;
++    switch (body.action) {
++      case 'scan.status':
++        result = getScanStatus_(payload);
++        break;
++      case 'scan.record':
++        result = recordScan_(payload);
++        break;
++      case 'admin.generate':
++        result = { ok: true, record: generateDailyCodes_(payload.date) };
++        break;
++      case 'admin.list':
++        result = listAttendance_(payload.date, payload.query);
++        break;
++      case 'admin.export':
++        result = exportAttendanceCsv_(payload.date);
++        break;
++      default:
++        result = { ok: false, error: 'UNKNOWN_ACTION' };
++    }
++    return jsonResponse_(result);
++  } catch (error) {
++    return jsonResponse_({ ok: false, error: errorCode_(error) });
++  }
++}
++
++function scanStatus(payload) {
++  return getScanStatus_(payload || {});
++}
++
++function scanRecord(payload) {
++  return recordScan_(payload || {});
++}
++
++function adminGenerate(payload) {
++  return { ok: true, record: generateDailyCodes_((payload || {}).date) };
++}
++
++function adminList(payload) {
++  return listAttendance_((payload || {}).date, (payload || {}).query);
++}
++
++function adminExport(payload) {
++  return exportAttendanceCsv_((payload || {}).date);
++}
++
++function doGet(event) {
++  const page = event && event.parameter && event.parameter.page;
++  if (page === 'admin' || page === 'scan') {
++    return HtmlService.createTemplateFromFile('Index').evaluate();
++  }
++  return HtmlService.createTemplateFromFile('Index').evaluate();
++}
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Core.gs ./Core.gs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Core.gs	1970-01-01 08:00:00.000000000 +0800
++++ ./Core.gs	2026-11-24 13:32:32.720631300 +0800
+@@ -0,0 +1,84 @@
++const SSLG_ATTENDANCE_TIME_ZONE = 'Asia/Manila';
++
++const DAILY_CODE_HEADERS = ['date', 'in_code', 'out_code', 'created_at', 'created_by'];
++const PEOPLE_HEADERS = ['device_token', 'name', 'first_seen_at', 'last_seen_at'];
++const ATTENDANCE_HEADERS = ['event_id', 'date', 'scanned_at', 'mode', 'name', 'device_token', 'qr_created_at'];
++
++function normalizeName_(value) {
++  const name = String(value == null ? '' : value).trim().replace(/\s+/g, ' ');
++  if (!name) throw new Error('NAME_REQUIRED');
++  if (name.length > 80) throw new Error('NAME_TOO_LONG');
++  return name;
++}
++
++function manilaParts_(date) {
++  const parts = new Intl.DateTimeFormat('en-CA', {
++    timeZone: SSLG_ATTENDANCE_TIME_ZONE,
++    year: 'numeric',
++    month: '2-digit',
++    day: '2-digit',
++    hour: '2-digit',
++    minute: '2-digit',
++    second: '2-digit',
++    hourCycle: 'h23'
++  }).formatToParts(date);
++  const result = {};
++  parts.forEach(part => {
++    if (part.type !== 'literal') result[part.type] = part.value;
++  });
++  return result;
++}
++
++function manilaDateKey_(date = new Date()) {
++  const parts = manilaParts_(date);
++  return `${parts.year}-${parts.month}-${parts.day}`;
++}
++
++function manilaTimestamp_(date = new Date()) {
++  const parts = manilaParts_(date);
++  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+08:00`;
++}
++
++function createDailyCodeRecord_(dateKey, now, makeToken) {
++  const normalizedDate = String(dateKey);
++  const parsedDate = new Date(`${normalizedDate}T00:00:00.000Z`);
++  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== normalizedDate) {
++    throw new Error('INVALID_DATE');
++  }
++  const inCode = makeToken();
++  const outCode = makeToken();
++  if (!inCode || !outCode || inCode === outCode) throw new Error('TOKEN_GENERATION_FAILED');
++  return {
++    date: normalizedDate,
++    in_code: inCode,
++    out_code: outCode,
++    created_at: manilaTimestamp_(now),
++    created_by: 'SSLG Office'
++  };
++}
++
++function validateScan_(params, record, now = new Date()) {
++  if (!params || typeof params !== 'object') return { ok: false, error: 'INVALID_REQUEST' };
++  const date = String(params.date || '');
++  const mode = String(params.mode || '').toUpperCase();
++  const code = String(params.code || '');
++  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !['IN', 'OUT'].includes(mode) || !code) {
++    return { ok: false, error: 'INVALID_REQUEST' };
++  }
++  if (!record) return { ok: false, error: 'CODE_NOT_FOUND' };
++  if (record.date !== date) return { ok: false, error: 'WRONG_DATE' };
++  if (manilaDateKey_(now) !== date) return { ok: false, error: 'CODE_EXPIRED' };
++  const expected = mode === 'IN' ? record.in_code : record.out_code;
++  if (code !== expected) return { ok: false, error: mode === 'IN' ? 'INVALID_CODE' : 'MODE_MISMATCH' };
++  return { ok: true, date, mode, qr_created_at: record.created_at };
++}
++
++function csvEscape_(value) {
++  return `"${String(value == null ? '' : value).replace(/"/g, '""')}"`;
++}
++
++function toCsv_(headers, rows) {
++  return [headers, ...rows]
++    .map(row => row.map(csvEscape_).join(','))
++    .join('\n');
++}
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Index.html ./Index.html
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Index.html	1970-01-01 08:00:00.000000000 +0800
++++ ./Index.html	2026-11-24 14:00:10.076112500 +0800
+@@ -0,0 +1,28 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
++  <meta name="theme-color" content="#102a43">
++  <title>SSLG Office Attendance</title>
++  <?!= include('Styles'); ?>
++</head>
++<body>
++  <header class="site-header">
++    <div class="brand-mark" aria-hidden="true">S</div>
++    <div>
++      <p class="eyebrow">SSLG Office</p>
++      <h1>Attendance</h1>
++    </div>
++  </header>
++  <main id="app" tabindex="-1">
++    <section class="loading-card" aria-live="polite">
++      <div class="spinner" aria-hidden="true"></div>
++      <p>Loading attendance…</p>
++    </section>
++  </main>
++  <footer class="site-footer">Benigno S. Aquino National High School · SSLG</footer>
++  <script><?!= include('QRCodeLib'); ?></script>
++  <?!= include('Client'); ?>
++</body>
++</html>
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/QRCodeLib.html ./QRCodeLib.html
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/QRCodeLib.html	1970-01-01 08:00:00.000000000 +0800
++++ ./QRCodeLib.html	2026-11-24 14:33:48.565792300 +0800
+@@ -0,0 +1,2345 @@
++//---------------------------------------------------------------------
++//
++// QR Code Generator for JavaScript
++//
++// Copyright (c) 2009 Kazuhiko Arase
++//
++// URL: http://www.d-project.com/
++//
++// Licensed under the MIT license:
++//  http://www.opensource.org/licenses/mit-license.php
++//
++// The word 'QR Code' is registered trademark of
++// DENSO WAVE INCORPORATED
++//  http://www.denso-wave.com/qrcode/faqpatent-e.html
++//
++//---------------------------------------------------------------------
++
++var qrcode = function() {
++
++  //---------------------------------------------------------------------
++  // qrcode
++  //---------------------------------------------------------------------
++
++  /**
++   * qrcode
++   * @param typeNumber 1 to 40
++   * @param errorCorrectionLevel 'L','M','Q','H'
++   */
++  var qrcode = function(typeNumber, errorCorrectionLevel) {
++
++    var PAD0 = 0xEC;
++    var PAD1 = 0x11;
++
++    var _typeNumber = typeNumber;
++    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
++    var _modules = null;
++    var _moduleCount = 0;
++    var _dataCache = null;
++    var _dataList = [];
++
++    var _this = {};
++
++    var makeImpl = function(test, maskPattern) {
++
++      _moduleCount = _typeNumber * 4 + 17;
++      _modules = function(moduleCount) {
++        var modules = new Array(moduleCount);
++        for (var row = 0; row < moduleCount; row += 1) {
++          modules[row] = new Array(moduleCount);
++          for (var col = 0; col < moduleCount; col += 1) {
++            modules[row][col] = null;
++          }
++        }
++        return modules;
++      }(_moduleCount);
++
++      setupPositionProbePattern(0, 0);
++      setupPositionProbePattern(_moduleCount - 7, 0);
++      setupPositionProbePattern(0, _moduleCount - 7);
++      setupPositionAdjustPattern();
++      setupTimingPattern();
++      setupTypeInfo(test, maskPattern);
++
++      if (_typeNumber >= 7) {
++        setupTypeNumber(test);
++      }
++
++      if (_dataCache == null) {
++        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
++      }
++
++      mapData(_dataCache, maskPattern);
++    };
++
++    var setupPositionProbePattern = function(row, col) {
++
++      for (var r = -1; r <= 7; r += 1) {
++
++        if (row + r <= -1 || _moduleCount <= row + r) continue;
++
++        for (var c = -1; c <= 7; c += 1) {
++
++          if (col + c <= -1 || _moduleCount <= col + c) continue;
++
++          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
++              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
++              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
++            _modules[row + r][col + c] = true;
++          } else {
++            _modules[row + r][col + c] = false;
++          }
++        }
++      }
++    };
++
++    var getBestMaskPattern = function() {
++
++      var minLostPoint = 0;
++      var pattern = 0;
++
++      for (var i = 0; i < 8; i += 1) {
++
++        makeImpl(true, i);
++
++        var lostPoint = QRUtil.getLostPoint(_this);
++
++        if (i == 0 || minLostPoint > lostPoint) {
++          minLostPoint = lostPoint;
++          pattern = i;
++        }
++      }
++
++      return pattern;
++    };
++
++    var setupTimingPattern = function() {
++
++      for (var r = 8; r < _moduleCount - 8; r += 1) {
++        if (_modules[r][6] != null) {
++          continue;
++        }
++        _modules[r][6] = (r % 2 == 0);
++      }
++
++      for (var c = 8; c < _moduleCount - 8; c += 1) {
++        if (_modules[6][c] != null) {
++          continue;
++        }
++        _modules[6][c] = (c % 2 == 0);
++      }
++    };
++
++    var setupPositionAdjustPattern = function() {
++
++      var pos = QRUtil.getPatternPosition(_typeNumber);
++
++      for (var i = 0; i < pos.length; i += 1) {
++
++        for (var j = 0; j < pos.length; j += 1) {
++
++          var row = pos[i];
++          var col = pos[j];
++
++          if (_modules[row][col] != null) {
++            continue;
++          }
++
++          for (var r = -2; r <= 2; r += 1) {
++
++            for (var c = -2; c <= 2; c += 1) {
++
++              if (r == -2 || r == 2 || c == -2 || c == 2
++                  || (r == 0 && c == 0) ) {
++                _modules[row + r][col + c] = true;
++              } else {
++                _modules[row + r][col + c] = false;
++              }
++            }
++          }
++        }
++      }
++    };
++
++    var setupTypeNumber = function(test) {
++
++      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
++
++      for (var i = 0; i < 18; i += 1) {
++        var mod = (!test && ( (bits >> i) & 1) == 1);
++        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
++      }
++
++      for (var i = 0; i < 18; i += 1) {
++        var mod = (!test && ( (bits >> i) & 1) == 1);
++        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
++      }
++    };
++
++    var setupTypeInfo = function(test, maskPattern) {
++
++      var data = (_errorCorrectionLevel << 3) | maskPattern;
++      var bits = QRUtil.getBCHTypeInfo(data);
++
++      // vertical
++      for (var i = 0; i < 15; i += 1) {
++
++        var mod = (!test && ( (bits >> i) & 1) == 1);
++
++        if (i < 6) {
++          _modules[i][8] = mod;
++        } else if (i < 8) {
++          _modules[i + 1][8] = mod;
++        } else {
++          _modules[_moduleCount - 15 + i][8] = mod;
++        }
++      }
++
++      // horizontal
++      for (var i = 0; i < 15; i += 1) {
++
++        var mod = (!test && ( (bits >> i) & 1) == 1);
++
++        if (i < 8) {
++          _modules[8][_moduleCount - i - 1] = mod;
++        } else if (i < 9) {
++          _modules[8][15 - i - 1 + 1] = mod;
++        } else {
++          _modules[8][15 - i - 1] = mod;
++        }
++      }
++
++      // fixed module
++      _modules[_moduleCount - 8][8] = (!test);
++    };
++
++    var mapData = function(data, maskPattern) {
++
++      var inc = -1;
++      var row = _moduleCount - 1;
++      var bitIndex = 7;
++      var byteIndex = 0;
++      var maskFunc = QRUtil.getMaskFunction(maskPattern);
++
++      for (var col = _moduleCount - 1; col > 0; col -= 2) {
++
++        if (col == 6) col -= 1;
++
++        while (true) {
++
++          for (var c = 0; c < 2; c += 1) {
++
++            if (_modules[row][col - c] == null) {
++
++              var dark = false;
++
++              if (byteIndex < data.length) {
++                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
++              }
++
++              var mask = maskFunc(row, col - c);
++
++              if (mask) {
++                dark = !dark;
++              }
++
++              _modules[row][col - c] = dark;
++              bitIndex -= 1;
++
++              if (bitIndex == -1) {
++                byteIndex += 1;
++                bitIndex = 7;
++              }
++            }
++          }
++
++          row += inc;
++
++          if (row < 0 || _moduleCount <= row) {
++            row -= inc;
++            inc = -inc;
++            break;
++          }
++        }
++      }
++    };
++
++    var createBytes = function(buffer, rsBlocks) {
++
++      var offset = 0;
++
++      var maxDcCount = 0;
++      var maxEcCount = 0;
++
++      var dcdata = new Array(rsBlocks.length);
++      var ecdata = new Array(rsBlocks.length);
++
++      for (var r = 0; r < rsBlocks.length; r += 1) {
++
++        var dcCount = rsBlocks[r].dataCount;
++        var ecCount = rsBlocks[r].totalCount - dcCount;
++
++        maxDcCount = Math.max(maxDcCount, dcCount);
++        maxEcCount = Math.max(maxEcCount, ecCount);
++
++        dcdata[r] = new Array(dcCount);
++
++        for (var i = 0; i < dcdata[r].length; i += 1) {
++          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
++        }
++        offset += dcCount;
++
++        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
++        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
++
++        var modPoly = rawPoly.mod(rsPoly);
++        ecdata[r] = new Array(rsPoly.getLength() - 1);
++        for (var i = 0; i < ecdata[r].length; i += 1) {
++          var modIndex = i + modPoly.getLength() - ecdata[r].length;
++          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
++        }
++      }
++
++      var totalCodeCount = 0;
++      for (var i = 0; i < rsBlocks.length; i += 1) {
++        totalCodeCount += rsBlocks[i].totalCount;
++      }
++
++      var data = new Array(totalCodeCount);
++      var index = 0;
++
++      for (var i = 0; i < maxDcCount; i += 1) {
++        for (var r = 0; r < rsBlocks.length; r += 1) {
++          if (i < dcdata[r].length) {
++            data[index] = dcdata[r][i];
++            index += 1;
++          }
++        }
++      }
++
++      for (var i = 0; i < maxEcCount; i += 1) {
++        for (var r = 0; r < rsBlocks.length; r += 1) {
++          if (i < ecdata[r].length) {
++            data[index] = ecdata[r][i];
++            index += 1;
++          }
++        }
++      }
++
++      return data;
++    };
++
++    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
++
++      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
++
++      var buffer = qrBitBuffer();
++
++      for (var i = 0; i < dataList.length; i += 1) {
++        var data = dataList[i];
++        buffer.put(data.getMode(), 4);
++        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
++        data.write(buffer);
++      }
++
++      // calc num max data.
++      var totalDataCount = 0;
++      for (var i = 0; i < rsBlocks.length; i += 1) {
++        totalDataCount += rsBlocks[i].dataCount;
++      }
++
++      if (buffer.getLengthInBits() > totalDataCount * 8) {
++        throw 'code length overflow. ('
++          + buffer.getLengthInBits()
++          + '>'
++          + totalDataCount * 8
++          + ')';
++      }
++
++      // end code
++      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
++        buffer.put(0, 4);
++      }
++
++      // padding
++      while (buffer.getLengthInBits() % 8 != 0) {
++        buffer.putBit(false);
++      }
++
++      // padding
++      while (true) {
++
++        if (buffer.getLengthInBits() >= totalDataCount * 8) {
++          break;
++        }
++        buffer.put(PAD0, 8);
++
++        if (buffer.getLengthInBits() >= totalDataCount * 8) {
++          break;
++        }
++        buffer.put(PAD1, 8);
++      }
++
++      return createBytes(buffer, rsBlocks);
++    };
++
++    _this.addData = function(data, mode) {
++
++      mode = mode || 'Byte';
++
++      var newData = null;
++
++      switch(mode) {
++      case 'Numeric' :
++        newData = qrNumber(data);
++        break;
++      case 'Alphanumeric' :
++        newData = qrAlphaNum(data);
++        break;
++      case 'Byte' :
++        newData = qr8BitByte(data);
++        break;
++      case 'Kanji' :
++        newData = qrKanji(data);
++        break;
++      default :
++        throw 'mode:' + mode;
++      }
++
++      _dataList.push(newData);
++      _dataCache = null;
++    };
++
++    _this.isDark = function(row, col) {
++      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
++        throw row + ',' + col;
++      }
++      return _modules[row][col];
++    };
++
++    _this.getModuleCount = function() {
++      return _moduleCount;
++    };
++
++    _this.make = function() {
++      if (_typeNumber < 1) {
++        var typeNumber = 1;
++
++        for (; typeNumber < 40; typeNumber++) {
++          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
++          var buffer = qrBitBuffer();
++
++          for (var i = 0; i < _dataList.length; i++) {
++            var data = _dataList[i];
++            buffer.put(data.getMode(), 4);
++            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
++            data.write(buffer);
++          }
++
++          var totalDataCount = 0;
++          for (var i = 0; i < rsBlocks.length; i++) {
++            totalDataCount += rsBlocks[i].dataCount;
++          }
++
++          if (buffer.getLengthInBits() <= totalDataCount * 8) {
++            break;
++          }
++        }
++
++        _typeNumber = typeNumber;
++      }
++
++      makeImpl(false, getBestMaskPattern() );
++    };
++
++    _this.createTableTag = function(cellSize, margin) {
++
++      cellSize = cellSize || 2;
++      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
++
++      var qrHtml = '';
++
++      qrHtml += '<table style="';
++      qrHtml += ' border-width: 0px; border-style: none;';
++      qrHtml += ' border-collapse: collapse;';
++      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
++      qrHtml += '">';
++      qrHtml += '<tbody>';
++
++      for (var r = 0; r < _this.getModuleCount(); r += 1) {
++
++        qrHtml += '<tr>';
++
++        for (var c = 0; c < _this.getModuleCount(); c += 1) {
++          qrHtml += '<td style="';
++          qrHtml += ' border-width: 0px; border-style: none;';
++          qrHtml += ' border-collapse: collapse;';
++          qrHtml += ' padding: 0px; margin: 0px;';
++          qrHtml += ' width: ' + cellSize + 'px;';
++          qrHtml += ' height: ' + cellSize + 'px;';
++          qrHtml += ' background-color: ';
++          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
++          qrHtml += ';';
++          qrHtml += '"/>';
++        }
++
++        qrHtml += '</tr>';
++      }
++
++      qrHtml += '</tbody>';
++      qrHtml += '</table>';
++
++      return qrHtml;
++    };
++
++    _this.createSvgTag = function(cellSize, margin, alt, title) {
++
++      var opts = {};
++      if (typeof arguments[0] == 'object') {
++        // Called by options.
++        opts = arguments[0];
++        // overwrite cellSize and margin.
++        cellSize = opts.cellSize;
++        margin = opts.margin;
++        alt = opts.alt;
++        title = opts.title;
++      }
++
++      cellSize = cellSize || 2;
++      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
++
++      // Compose alt property surrogate
++      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
++      alt.text = alt.text || null;
++      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
++
++      // Compose title property surrogate
++      title = (typeof title === 'string') ? {text: title} : title || {};
++      title.text = title.text || null;
++      title.id = (title.text) ? title.id || 'qrcode-title' : null;
++
++      var size = _this.getModuleCount() * cellSize + margin * 2;
++      var c, mc, r, mr, qrSvg='', rect;
++
++      rect = 'l' + cellSize + ',0 0,' + cellSize +
++        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
++
++      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
++      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
++      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
++      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
++      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
++          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
++      qrSvg += '>';
++      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
++          escapeXml(title.text) + '</title>' : '';
++      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
++          escapeXml(alt.text) + '</description>' : '';
++      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
++      qrSvg += '<path d="';
++
++      for (r = 0; r < _this.getModuleCount(); r += 1) {
++        mr = r * cellSize + margin;
++        for (c = 0; c < _this.getModuleCount(); c += 1) {
++          if (_this.isDark(r, c) ) {
++            mc = c*cellSize+margin;
++            qrSvg += 'M' + mc + ',' + mr + rect;
++          }
++        }
++      }
++
++      qrSvg += '" stroke="transparent" fill="black"/>';
++      qrSvg += '</svg>';
++
++      return qrSvg;
++    };
++
++    _this.createDataURL = function(cellSize, margin) {
++
++      cellSize = cellSize || 2;
++      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
++
++      var size = _this.getModuleCount() * cellSize + margin * 2;
++      var min = margin;
++      var max = size - margin;
++
++      return createDataURL(size, size, function(x, y) {
++        if (min <= x && x < max && min <= y && y < max) {
++          var c = Math.floor( (x - min) / cellSize);
++          var r = Math.floor( (y - min) / cellSize);
++          return _this.isDark(r, c)? 0 : 1;
++        } else {
++          return 1;
++        }
++      } );
++    };
++
++    _this.createImgTag = function(cellSize, margin, alt) {
++
++      cellSize = cellSize || 2;
++      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
++
++      var size = _this.getModuleCount() * cellSize + margin * 2;
++
++      var img = '';
++      img += '<img';
++      img += '\u0020src="';
++      img += _this.createDataURL(cellSize, margin);
++      img += '"';
++      img += '\u0020width="';
++      img += size;
++      img += '"';
++      img += '\u0020height="';
++      img += size;
++      img += '"';
++      if (alt) {
++        img += '\u0020alt="';
++        img += escapeXml(alt);
++        img += '"';
++      }
++      img += '/>';
++
++      return img;
++    };
++
++    var escapeXml = function(s) {
++      var escaped = '';
++      for (var i = 0; i < s.length; i += 1) {
++        var c = s.charAt(i);
++        switch(c) {
++        case '<': escaped += '&lt;'; break;
++        case '>': escaped += '&gt;'; break;
++        case '&': escaped += '&amp;'; break;
++        case '"': escaped += '&quot;'; break;
++        default : escaped += c; break;
++        }
++      }
++      return escaped;
++    };
++
++    var _createHalfASCII = function(margin) {
++      var cellSize = 1;
++      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
++
++      var size = _this.getModuleCount() * cellSize + margin * 2;
++      var min = margin;
++      var max = size - margin;
++
++      var y, x, r1, r2, p;
++
++      var blocks = {
++        '██': '█',
++        '█ ': '▀',
++        ' █': '▄',
++        '  ': ' '
++      };
++
++      var blocksLastLineNoMargin = {
++        '██': '▀',
++        '█ ': '▀',
++        ' █': ' ',
++        '  ': ' '
++      };
++
++      var ascii = '';
++      for (y = 0; y < size; y += 2) {
++        r1 = Math.floor((y - min) / cellSize);
++        r2 = Math.floor((y + 1 - min) / cellSize);
++        for (x = 0; x < size; x += 1) {
++          p = '█';
++
++          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
++            p = ' ';
++          }
++
++          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
++            p += ' ';
++          }
++          else {
++            p += '█';
++          }
++
++          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
++          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
++        }
++
++        ascii += '\n';
++      }
++
++      if (size % 2 && margin > 0) {
++        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
++      }
++
++      return ascii.substring(0, ascii.length-1);
++    };
++
++    _this.createASCII = function(cellSize, margin) {
++      cellSize = cellSize || 1;
++
++      if (cellSize < 2) {
++        return _createHalfASCII(margin);
++      }
++
++      cellSize -= 1;
++      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
++
++      var size = _this.getModuleCount() * cellSize + margin * 2;
++      var min = margin;
++      var max = size - margin;
++
++      var y, x, r, p;
++
++      var white = Array(cellSize+1).join('██');
++      var black = Array(cellSize+1).join('  ');
++
++      var ascii = '';
++      var line = '';
++      for (y = 0; y < size; y += 1) {
++        r = Math.floor( (y - min) / cellSize);
++        line = '';
++        for (x = 0; x < size; x += 1) {
++          p = 1;
++
++          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
++            p = 0;
++          }
++
++          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
++          line += p ? white : black;
++        }
++
++        for (r = 0; r < cellSize; r += 1) {
++          ascii += line + '\n';
++        }
++      }
++
++      return ascii.substring(0, ascii.length-1);
++    };
++
++    _this.renderTo2dContext = function(context, cellSize) {
++      cellSize = cellSize || 2;
++      var length = _this.getModuleCount();
++      for (var row = 0; row < length; row++) {
++        for (var col = 0; col < length; col++) {
++          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
++          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
++        }
++      }
++    }
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // qrcode.stringToBytes
++  //---------------------------------------------------------------------
++
++  qrcode.stringToBytesFuncs = {
++    'default' : function(s) {
++      var bytes = [];
++      for (var i = 0; i < s.length; i += 1) {
++        var c = s.charCodeAt(i);
++        bytes.push(c & 0xff);
++      }
++      return bytes;
++    }
++  };
++
++  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
++
++  //---------------------------------------------------------------------
++  // qrcode.createStringToBytes
++  //---------------------------------------------------------------------
++
++  /**
++   * @param unicodeData base64 string of byte array.
++   * [16bit Unicode],[16bit Bytes], ...
++   * @param numChars
++   */
++  qrcode.createStringToBytes = function(unicodeData, numChars) {
++
++    // create conversion map.
++
++    var unicodeMap = function() {
++
++      var bin = base64DecodeInputStream(unicodeData);
++      var read = function() {
++        var b = bin.read();
++        if (b == -1) throw 'eof';
++        return b;
++      };
++
++      var count = 0;
++      var unicodeMap = {};
++      while (true) {
++        var b0 = bin.read();
++        if (b0 == -1) break;
++        var b1 = read();
++        var b2 = read();
++        var b3 = read();
++        var k = String.fromCharCode( (b0 << 8) | b1);
++        var v = (b2 << 8) | b3;
++        unicodeMap[k] = v;
++        count += 1;
++      }
++      if (count != numChars) {
++        throw count + ' != ' + numChars;
++      }
++
++      return unicodeMap;
++    }();
++
++    var unknownChar = '?'.charCodeAt(0);
++
++    return function(s) {
++      var bytes = [];
++      for (var i = 0; i < s.length; i += 1) {
++        var c = s.charCodeAt(i);
++        if (c < 128) {
++          bytes.push(c);
++        } else {
++          var b = unicodeMap[s.charAt(i)];
++          if (typeof b == 'number') {
++            if ( (b & 0xff) == b) {
++              // 1byte
++              bytes.push(b);
++            } else {
++              // 2bytes
++              bytes.push(b >>> 8);
++              bytes.push(b & 0xff);
++            }
++          } else {
++            bytes.push(unknownChar);
++          }
++        }
++      }
++      return bytes;
++    };
++  };
++
++  //---------------------------------------------------------------------
++  // QRMode
++  //---------------------------------------------------------------------
++
++  var QRMode = {
++    MODE_NUMBER :    1 << 0,
++    MODE_ALPHA_NUM : 1 << 1,
++    MODE_8BIT_BYTE : 1 << 2,
++    MODE_KANJI :     1 << 3
++  };
++
++  //---------------------------------------------------------------------
++  // QRErrorCorrectionLevel
++  //---------------------------------------------------------------------
++
++  var QRErrorCorrectionLevel = {
++    L : 1,
++    M : 0,
++    Q : 3,
++    H : 2
++  };
++
++  //---------------------------------------------------------------------
++  // QRMaskPattern
++  //---------------------------------------------------------------------
++
++  var QRMaskPattern = {
++    PATTERN000 : 0,
++    PATTERN001 : 1,
++    PATTERN010 : 2,
++    PATTERN011 : 3,
++    PATTERN100 : 4,
++    PATTERN101 : 5,
++    PATTERN110 : 6,
++    PATTERN111 : 7
++  };
++
++  //---------------------------------------------------------------------
++  // QRUtil
++  //---------------------------------------------------------------------
++
++  var QRUtil = function() {
++
++    var PATTERN_POSITION_TABLE = [
++      [],
++      [6, 18],
++      [6, 22],
++      [6, 26],
++      [6, 30],
++      [6, 34],
++      [6, 22, 38],
++      [6, 24, 42],
++      [6, 26, 46],
++      [6, 28, 50],
++      [6, 30, 54],
++      [6, 32, 58],
++      [6, 34, 62],
++      [6, 26, 46, 66],
++      [6, 26, 48, 70],
++      [6, 26, 50, 74],
++      [6, 30, 54, 78],
++      [6, 30, 56, 82],
++      [6, 30, 58, 86],
++      [6, 34, 62, 90],
++      [6, 28, 50, 72, 94],
++      [6, 26, 50, 74, 98],
++      [6, 30, 54, 78, 102],
++      [6, 28, 54, 80, 106],
++      [6, 32, 58, 84, 110],
++      [6, 30, 58, 86, 114],
++      [6, 34, 62, 90, 118],
++      [6, 26, 50, 74, 98, 122],
++      [6, 30, 54, 78, 102, 126],
++      [6, 26, 52, 78, 104, 130],
++      [6, 30, 56, 82, 108, 134],
++      [6, 34, 60, 86, 112, 138],
++      [6, 30, 58, 86, 114, 142],
++      [6, 34, 62, 90, 118, 146],
++      [6, 30, 54, 78, 102, 126, 150],
++      [6, 24, 50, 76, 102, 128, 154],
++      [6, 28, 54, 80, 106, 132, 158],
++      [6, 32, 58, 84, 110, 136, 162],
++      [6, 26, 54, 82, 110, 138, 166],
++      [6, 30, 58, 86, 114, 142, 170]
++    ];
++    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
++    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
++    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
++
++    var _this = {};
++
++    var getBCHDigit = function(data) {
++      var digit = 0;
++      while (data != 0) {
++        digit += 1;
++        data >>>= 1;
++      }
++      return digit;
++    };
++
++    _this.getBCHTypeInfo = function(data) {
++      var d = data << 10;
++      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
++        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
++      }
++      return ( (data << 10) | d) ^ G15_MASK;
++    };
++
++    _this.getBCHTypeNumber = function(data) {
++      var d = data << 12;
++      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
++        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
++      }
++      return (data << 12) | d;
++    };
++
++    _this.getPatternPosition = function(typeNumber) {
++      return PATTERN_POSITION_TABLE[typeNumber - 1];
++    };
++
++    _this.getMaskFunction = function(maskPattern) {
++
++      switch (maskPattern) {
++
++      case QRMaskPattern.PATTERN000 :
++        return function(i, j) { return (i + j) % 2 == 0; };
++      case QRMaskPattern.PATTERN001 :
++        return function(i, j) { return i % 2 == 0; };
++      case QRMaskPattern.PATTERN010 :
++        return function(i, j) { return j % 3 == 0; };
++      case QRMaskPattern.PATTERN011 :
++        return function(i, j) { return (i + j) % 3 == 0; };
++      case QRMaskPattern.PATTERN100 :
++        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
++      case QRMaskPattern.PATTERN101 :
++        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
++      case QRMaskPattern.PATTERN110 :
++        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
++      case QRMaskPattern.PATTERN111 :
++        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
++
++      default :
++        throw 'bad maskPattern:' + maskPattern;
++      }
++    };
++
++    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
++      var a = qrPolynomial([1], 0);
++      for (var i = 0; i < errorCorrectLength; i += 1) {
++        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
++      }
++      return a;
++    };
++
++    _this.getLengthInBits = function(mode, type) {
++
++      if (1 <= type && type < 10) {
++
++        // 1 - 9
++
++        switch(mode) {
++        case QRMode.MODE_NUMBER    : return 10;
++        case QRMode.MODE_ALPHA_NUM : return 9;
++        case QRMode.MODE_8BIT_BYTE : return 8;
++        case QRMode.MODE_KANJI     : return 8;
++        default :
++          throw 'mode:' + mode;
++        }
++
++      } else if (type < 27) {
++
++        // 10 - 26
++
++        switch(mode) {
++        case QRMode.MODE_NUMBER    : return 12;
++        case QRMode.MODE_ALPHA_NUM : return 11;
++        case QRMode.MODE_8BIT_BYTE : return 16;
++        case QRMode.MODE_KANJI     : return 10;
++        default :
++          throw 'mode:' + mode;
++        }
++
++      } else if (type < 41) {
++
++        // 27 - 40
++
++        switch(mode) {
++        case QRMode.MODE_NUMBER    : return 14;
++        case QRMode.MODE_ALPHA_NUM : return 13;
++        case QRMode.MODE_8BIT_BYTE : return 16;
++        case QRMode.MODE_KANJI     : return 12;
++        default :
++          throw 'mode:' + mode;
++        }
++
++      } else {
++        throw 'type:' + type;
++      }
++    };
++
++    _this.getLostPoint = function(qrcode) {
++
++      var moduleCount = qrcode.getModuleCount();
++
++      var lostPoint = 0;
++
++      // LEVEL1
++
++      for (var row = 0; row < moduleCount; row += 1) {
++        for (var col = 0; col < moduleCount; col += 1) {
++
++          var sameCount = 0;
++          var dark = qrcode.isDark(row, col);
++
++          for (var r = -1; r <= 1; r += 1) {
++
++            if (row + r < 0 || moduleCount <= row + r) {
++              continue;
++            }
++
++            for (var c = -1; c <= 1; c += 1) {
++
++              if (col + c < 0 || moduleCount <= col + c) {
++                continue;
++              }
++
++              if (r == 0 && c == 0) {
++                continue;
++              }
++
++              if (dark == qrcode.isDark(row + r, col + c) ) {
++                sameCount += 1;
++              }
++            }
++          }
++
++          if (sameCount > 5) {
++            lostPoint += (3 + sameCount - 5);
++          }
++        }
++      };
++
++      // LEVEL2
++
++      for (var row = 0; row < moduleCount - 1; row += 1) {
++        for (var col = 0; col < moduleCount - 1; col += 1) {
++          var count = 0;
++          if (qrcode.isDark(row, col) ) count += 1;
++          if (qrcode.isDark(row + 1, col) ) count += 1;
++          if (qrcode.isDark(row, col + 1) ) count += 1;
++          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
++          if (count == 0 || count == 4) {
++            lostPoint += 3;
++          }
++        }
++      }
++
++      // LEVEL3
++
++      for (var row = 0; row < moduleCount; row += 1) {
++        for (var col = 0; col < moduleCount - 6; col += 1) {
++          if (qrcode.isDark(row, col)
++              && !qrcode.isDark(row, col + 1)
++              &&  qrcode.isDark(row, col + 2)
++              &&  qrcode.isDark(row, col + 3)
++              &&  qrcode.isDark(row, col + 4)
++              && !qrcode.isDark(row, col + 5)
++              &&  qrcode.isDark(row, col + 6) ) {
++            lostPoint += 40;
++          }
++        }
++      }
++
++      for (var col = 0; col < moduleCount; col += 1) {
++        for (var row = 0; row < moduleCount - 6; row += 1) {
++          if (qrcode.isDark(row, col)
++              && !qrcode.isDark(row + 1, col)
++              &&  qrcode.isDark(row + 2, col)
++              &&  qrcode.isDark(row + 3, col)
++              &&  qrcode.isDark(row + 4, col)
++              && !qrcode.isDark(row + 5, col)
++              &&  qrcode.isDark(row + 6, col) ) {
++            lostPoint += 40;
++          }
++        }
++      }
++
++      // LEVEL4
++
++      var darkCount = 0;
++
++      for (var col = 0; col < moduleCount; col += 1) {
++        for (var row = 0; row < moduleCount; row += 1) {
++          if (qrcode.isDark(row, col) ) {
++            darkCount += 1;
++          }
++        }
++      }
++
++      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
++      lostPoint += ratio * 10;
++
++      return lostPoint;
++    };
++
++    return _this;
++  }();
++
++  //---------------------------------------------------------------------
++  // QRMath
++  //---------------------------------------------------------------------
++
++  var QRMath = function() {
++
++    var EXP_TABLE = new Array(256);
++    var LOG_TABLE = new Array(256);
++
++    // initialize tables
++    for (var i = 0; i < 8; i += 1) {
++      EXP_TABLE[i] = 1 << i;
++    }
++    for (var i = 8; i < 256; i += 1) {
++      EXP_TABLE[i] = EXP_TABLE[i - 4]
++        ^ EXP_TABLE[i - 5]
++        ^ EXP_TABLE[i - 6]
++        ^ EXP_TABLE[i - 8];
++    }
++    for (var i = 0; i < 255; i += 1) {
++      LOG_TABLE[EXP_TABLE[i] ] = i;
++    }
++
++    var _this = {};
++
++    _this.glog = function(n) {
++
++      if (n < 1) {
++        throw 'glog(' + n + ')';
++      }
++
++      return LOG_TABLE[n];
++    };
++
++    _this.gexp = function(n) {
++
++      while (n < 0) {
++        n += 255;
++      }
++
++      while (n >= 256) {
++        n -= 255;
++      }
++
++      return EXP_TABLE[n];
++    };
++
++    return _this;
++  }();
++
++  //---------------------------------------------------------------------
++  // qrPolynomial
++  //---------------------------------------------------------------------
++
++  function qrPolynomial(num, shift) {
++
++    if (typeof num.length == 'undefined') {
++      throw num.length + '/' + shift;
++    }
++
++    var _num = function() {
++      var offset = 0;
++      while (offset < num.length && num[offset] == 0) {
++        offset += 1;
++      }
++      var _num = new Array(num.length - offset + shift);
++      for (var i = 0; i < num.length - offset; i += 1) {
++        _num[i] = num[i + offset];
++      }
++      return _num;
++    }();
++
++    var _this = {};
++
++    _this.getAt = function(index) {
++      return _num[index];
++    };
++
++    _this.getLength = function() {
++      return _num.length;
++    };
++
++    _this.multiply = function(e) {
++
++      var num = new Array(_this.getLength() + e.getLength() - 1);
++
++      for (var i = 0; i < _this.getLength(); i += 1) {
++        for (var j = 0; j < e.getLength(); j += 1) {
++          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
++        }
++      }
++
++      return qrPolynomial(num, 0);
++    };
++
++    _this.mod = function(e) {
++
++      if (_this.getLength() - e.getLength() < 0) {
++        return _this;
++      }
++
++      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
++
++      var num = new Array(_this.getLength() );
++      for (var i = 0; i < _this.getLength(); i += 1) {
++        num[i] = _this.getAt(i);
++      }
++
++      for (var i = 0; i < e.getLength(); i += 1) {
++        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
++      }
++
++      // recursive call
++      return qrPolynomial(num, 0).mod(e);
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // QRRSBlock
++  //---------------------------------------------------------------------
++
++  var QRRSBlock = function() {
++
++    var RS_BLOCK_TABLE = [
++
++      // L
++      // M
++      // Q
++      // H
++
++      // 1
++      [1, 26, 19],
++      [1, 26, 16],
++      [1, 26, 13],
++      [1, 26, 9],
++
++      // 2
++      [1, 44, 34],
++      [1, 44, 28],
++      [1, 44, 22],
++      [1, 44, 16],
++
++      // 3
++      [1, 70, 55],
++      [1, 70, 44],
++      [2, 35, 17],
++      [2, 35, 13],
++
++      // 4
++      [1, 100, 80],
++      [2, 50, 32],
++      [2, 50, 24],
++      [4, 25, 9],
++
++      // 5
++      [1, 134, 108],
++      [2, 67, 43],
++      [2, 33, 15, 2, 34, 16],
++      [2, 33, 11, 2, 34, 12],
++
++      // 6
++      [2, 86, 68],
++      [4, 43, 27],
++      [4, 43, 19],
++      [4, 43, 15],
++
++      // 7
++      [2, 98, 78],
++      [4, 49, 31],
++      [2, 32, 14, 4, 33, 15],
++      [4, 39, 13, 1, 40, 14],
++
++      // 8
++      [2, 121, 97],
++      [2, 60, 38, 2, 61, 39],
++      [4, 40, 18, 2, 41, 19],
++      [4, 40, 14, 2, 41, 15],
++
++      // 9
++      [2, 146, 116],
++      [3, 58, 36, 2, 59, 37],
++      [4, 36, 16, 4, 37, 17],
++      [4, 36, 12, 4, 37, 13],
++
++      // 10
++      [2, 86, 68, 2, 87, 69],
++      [4, 69, 43, 1, 70, 44],
++      [6, 43, 19, 2, 44, 20],
++      [6, 43, 15, 2, 44, 16],
++
++      // 11
++      [4, 101, 81],
++      [1, 80, 50, 4, 81, 51],
++      [4, 50, 22, 4, 51, 23],
++      [3, 36, 12, 8, 37, 13],
++
++      // 12
++      [2, 116, 92, 2, 117, 93],
++      [6, 58, 36, 2, 59, 37],
++      [4, 46, 20, 6, 47, 21],
++      [7, 42, 14, 4, 43, 15],
++
++      // 13
++      [4, 133, 107],
++      [8, 59, 37, 1, 60, 38],
++      [8, 44, 20, 4, 45, 21],
++      [12, 33, 11, 4, 34, 12],
++
++      // 14
++      [3, 145, 115, 1, 146, 116],
++      [4, 64, 40, 5, 65, 41],
++      [11, 36, 16, 5, 37, 17],
++      [11, 36, 12, 5, 37, 13],
++
++      // 15
++      [5, 109, 87, 1, 110, 88],
++      [5, 65, 41, 5, 66, 42],
++      [5, 54, 24, 7, 55, 25],
++      [11, 36, 12, 7, 37, 13],
++
++      // 16
++      [5, 122, 98, 1, 123, 99],
++      [7, 73, 45, 3, 74, 46],
++      [15, 43, 19, 2, 44, 20],
++      [3, 45, 15, 13, 46, 16],
++
++      // 17
++      [1, 135, 107, 5, 136, 108],
++      [10, 74, 46, 1, 75, 47],
++      [1, 50, 22, 15, 51, 23],
++      [2, 42, 14, 17, 43, 15],
++
++      // 18
++      [5, 150, 120, 1, 151, 121],
++      [9, 69, 43, 4, 70, 44],
++      [17, 50, 22, 1, 51, 23],
++      [2, 42, 14, 19, 43, 15],
++
++      // 19
++      [3, 141, 113, 4, 142, 114],
++      [3, 70, 44, 11, 71, 45],
++      [17, 47, 21, 4, 48, 22],
++      [9, 39, 13, 16, 40, 14],
++
++      // 20
++      [3, 135, 107, 5, 136, 108],
++      [3, 67, 41, 13, 68, 42],
++      [15, 54, 24, 5, 55, 25],
++      [15, 43, 15, 10, 44, 16],
++
++      // 21
++      [4, 144, 116, 4, 145, 117],
++      [17, 68, 42],
++      [17, 50, 22, 6, 51, 23],
++      [19, 46, 16, 6, 47, 17],
++
++      // 22
++      [2, 139, 111, 7, 140, 112],
++      [17, 74, 46],
++      [7, 54, 24, 16, 55, 25],
++      [34, 37, 13],
++
++      // 23
++      [4, 151, 121, 5, 152, 122],
++      [4, 75, 47, 14, 76, 48],
++      [11, 54, 24, 14, 55, 25],
++      [16, 45, 15, 14, 46, 16],
++
++      // 24
++      [6, 147, 117, 4, 148, 118],
++      [6, 73, 45, 14, 74, 46],
++      [11, 54, 24, 16, 55, 25],
++      [30, 46, 16, 2, 47, 17],
++
++      // 25
++      [8, 132, 106, 4, 133, 107],
++      [8, 75, 47, 13, 76, 48],
++      [7, 54, 24, 22, 55, 25],
++      [22, 45, 15, 13, 46, 16],
++
++      // 26
++      [10, 142, 114, 2, 143, 115],
++      [19, 74, 46, 4, 75, 47],
++      [28, 50, 22, 6, 51, 23],
++      [33, 46, 16, 4, 47, 17],
++
++      // 27
++      [8, 152, 122, 4, 153, 123],
++      [22, 73, 45, 3, 74, 46],
++      [8, 53, 23, 26, 54, 24],
++      [12, 45, 15, 28, 46, 16],
++
++      // 28
++      [3, 147, 117, 10, 148, 118],
++      [3, 73, 45, 23, 74, 46],
++      [4, 54, 24, 31, 55, 25],
++      [11, 45, 15, 31, 46, 16],
++
++      // 29
++      [7, 146, 116, 7, 147, 117],
++      [21, 73, 45, 7, 74, 46],
++      [1, 53, 23, 37, 54, 24],
++      [19, 45, 15, 26, 46, 16],
++
++      // 30
++      [5, 145, 115, 10, 146, 116],
++      [19, 75, 47, 10, 76, 48],
++      [15, 54, 24, 25, 55, 25],
++      [23, 45, 15, 25, 46, 16],
++
++      // 31
++      [13, 145, 115, 3, 146, 116],
++      [2, 74, 46, 29, 75, 47],
++      [42, 54, 24, 1, 55, 25],
++      [23, 45, 15, 28, 46, 16],
++
++      // 32
++      [17, 145, 115],
++      [10, 74, 46, 23, 75, 47],
++      [10, 54, 24, 35, 55, 25],
++      [19, 45, 15, 35, 46, 16],
++
++      // 33
++      [17, 145, 115, 1, 146, 116],
++      [14, 74, 46, 21, 75, 47],
++      [29, 54, 24, 19, 55, 25],
++      [11, 45, 15, 46, 46, 16],
++
++      // 34
++      [13, 145, 115, 6, 146, 116],
++      [14, 74, 46, 23, 75, 47],
++      [44, 54, 24, 7, 55, 25],
++      [59, 46, 16, 1, 47, 17],
++
++      // 35
++      [12, 151, 121, 7, 152, 122],
++      [12, 75, 47, 26, 76, 48],
++      [39, 54, 24, 14, 55, 25],
++      [22, 45, 15, 41, 46, 16],
++
++      // 36
++      [6, 151, 121, 14, 152, 122],
++      [6, 75, 47, 34, 76, 48],
++      [46, 54, 24, 10, 55, 25],
++      [2, 45, 15, 64, 46, 16],
++
++      // 37
++      [17, 152, 122, 4, 153, 123],
++      [29, 74, 46, 14, 75, 47],
++      [49, 54, 24, 10, 55, 25],
++      [24, 45, 15, 46, 46, 16],
++
++      // 38
++      [4, 152, 122, 18, 153, 123],
++      [13, 74, 46, 32, 75, 47],
++      [48, 54, 24, 14, 55, 25],
++      [42, 45, 15, 32, 46, 16],
++
++      // 39
++      [20, 147, 117, 4, 148, 118],
++      [40, 75, 47, 7, 76, 48],
++      [43, 54, 24, 22, 55, 25],
++      [10, 45, 15, 67, 46, 16],
++
++      // 40
++      [19, 148, 118, 6, 149, 119],
++      [18, 75, 47, 31, 76, 48],
++      [34, 54, 24, 34, 55, 25],
++      [20, 45, 15, 61, 46, 16]
++    ];
++
++    var qrRSBlock = function(totalCount, dataCount) {
++      var _this = {};
++      _this.totalCount = totalCount;
++      _this.dataCount = dataCount;
++      return _this;
++    };
++
++    var _this = {};
++
++    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
++
++      switch(errorCorrectionLevel) {
++      case QRErrorCorrectionLevel.L :
++        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
++      case QRErrorCorrectionLevel.M :
++        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
++      case QRErrorCorrectionLevel.Q :
++        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
++      case QRErrorCorrectionLevel.H :
++        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
++      default :
++        return undefined;
++      }
++    };
++
++    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
++
++      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
++
++      if (typeof rsBlock == 'undefined') {
++        throw 'bad rs block @ typeNumber:' + typeNumber +
++            '/errorCorrectionLevel:' + errorCorrectionLevel;
++      }
++
++      var length = rsBlock.length / 3;
++
++      var list = [];
++
++      for (var i = 0; i < length; i += 1) {
++
++        var count = rsBlock[i * 3 + 0];
++        var totalCount = rsBlock[i * 3 + 1];
++        var dataCount = rsBlock[i * 3 + 2];
++
++        for (var j = 0; j < count; j += 1) {
++          list.push(qrRSBlock(totalCount, dataCount) );
++        }
++      }
++
++      return list;
++    };
++
++    return _this;
++  }();
++
++  //---------------------------------------------------------------------
++  // qrBitBuffer
++  //---------------------------------------------------------------------
++
++  var qrBitBuffer = function() {
++
++    var _buffer = [];
++    var _length = 0;
++
++    var _this = {};
++
++    _this.getBuffer = function() {
++      return _buffer;
++    };
++
++    _this.getAt = function(index) {
++      var bufIndex = Math.floor(index / 8);
++      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
++    };
++
++    _this.put = function(num, length) {
++      for (var i = 0; i < length; i += 1) {
++        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
++      }
++    };
++
++    _this.getLengthInBits = function() {
++      return _length;
++    };
++
++    _this.putBit = function(bit) {
++
++      var bufIndex = Math.floor(_length / 8);
++      if (_buffer.length <= bufIndex) {
++        _buffer.push(0);
++      }
++
++      if (bit) {
++        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
++      }
++
++      _length += 1;
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // qrNumber
++  //---------------------------------------------------------------------
++
++  var qrNumber = function(data) {
++
++    var _mode = QRMode.MODE_NUMBER;
++    var _data = data;
++
++    var _this = {};
++
++    _this.getMode = function() {
++      return _mode;
++    };
++
++    _this.getLength = function(buffer) {
++      return _data.length;
++    };
++
++    _this.write = function(buffer) {
++
++      var data = _data;
++
++      var i = 0;
++
++      while (i + 2 < data.length) {
++        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
++        i += 3;
++      }
++
++      if (i < data.length) {
++        if (data.length - i == 1) {
++          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
++        } else if (data.length - i == 2) {
++          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
++        }
++      }
++    };
++
++    var strToNum = function(s) {
++      var num = 0;
++      for (var i = 0; i < s.length; i += 1) {
++        num = num * 10 + chatToNum(s.charAt(i) );
++      }
++      return num;
++    };
++
++    var chatToNum = function(c) {
++      if ('0' <= c && c <= '9') {
++        return c.charCodeAt(0) - '0'.charCodeAt(0);
++      }
++      throw 'illegal char :' + c;
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // qrAlphaNum
++  //---------------------------------------------------------------------
++
++  var qrAlphaNum = function(data) {
++
++    var _mode = QRMode.MODE_ALPHA_NUM;
++    var _data = data;
++
++    var _this = {};
++
++    _this.getMode = function() {
++      return _mode;
++    };
++
++    _this.getLength = function(buffer) {
++      return _data.length;
++    };
++
++    _this.write = function(buffer) {
++
++      var s = _data;
++
++      var i = 0;
++
++      while (i + 1 < s.length) {
++        buffer.put(
++          getCode(s.charAt(i) ) * 45 +
++          getCode(s.charAt(i + 1) ), 11);
++        i += 2;
++      }
++
++      if (i < s.length) {
++        buffer.put(getCode(s.charAt(i) ), 6);
++      }
++    };
++
++    var getCode = function(c) {
++
++      if ('0' <= c && c <= '9') {
++        return c.charCodeAt(0) - '0'.charCodeAt(0);
++      } else if ('A' <= c && c <= 'Z') {
++        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
++      } else {
++        switch (c) {
++        case ' ' : return 36;
++        case '$' : return 37;
++        case '%' : return 38;
++        case '*' : return 39;
++        case '+' : return 40;
++        case '-' : return 41;
++        case '.' : return 42;
++        case '/' : return 43;
++        case ':' : return 44;
++        default :
++          throw 'illegal char :' + c;
++        }
++      }
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // qr8BitByte
++  //---------------------------------------------------------------------
++
++  var qr8BitByte = function(data) {
++
++    var _mode = QRMode.MODE_8BIT_BYTE;
++    var _data = data;
++    var _bytes = qrcode.stringToBytes(data);
++
++    var _this = {};
++
++    _this.getMode = function() {
++      return _mode;
++    };
++
++    _this.getLength = function(buffer) {
++      return _bytes.length;
++    };
++
++    _this.write = function(buffer) {
++      for (var i = 0; i < _bytes.length; i += 1) {
++        buffer.put(_bytes[i], 8);
++      }
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // qrKanji
++  //---------------------------------------------------------------------
++
++  var qrKanji = function(data) {
++
++    var _mode = QRMode.MODE_KANJI;
++    var _data = data;
++
++    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
++    if (!stringToBytes) {
++      throw 'sjis not supported.';
++    }
++    !function(c, code) {
++      // self test for sjis support.
++      var test = stringToBytes(c);
++      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
++        throw 'sjis not supported.';
++      }
++    }('\u53cb', 0x9746);
++
++    var _bytes = stringToBytes(data);
++
++    var _this = {};
++
++    _this.getMode = function() {
++      return _mode;
++    };
++
++    _this.getLength = function(buffer) {
++      return ~~(_bytes.length / 2);
++    };
++
++    _this.write = function(buffer) {
++
++      var data = _bytes;
++
++      var i = 0;
++
++      while (i + 1 < data.length) {
++
++        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
++
++        if (0x8140 <= c && c <= 0x9FFC) {
++          c -= 0x8140;
++        } else if (0xE040 <= c && c <= 0xEBBF) {
++          c -= 0xC140;
++        } else {
++          throw 'illegal char at ' + (i + 1) + '/' + c;
++        }
++
++        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
++
++        buffer.put(c, 13);
++
++        i += 2;
++      }
++
++      if (i < data.length) {
++        throw 'illegal char at ' + (i + 1);
++      }
++    };
++
++    return _this;
++  };
++
++  //=====================================================================
++  // GIF Support etc.
++  //
++
++  //---------------------------------------------------------------------
++  // byteArrayOutputStream
++  //---------------------------------------------------------------------
++
++  var byteArrayOutputStream = function() {
++
++    var _bytes = [];
++
++    var _this = {};
++
++    _this.writeByte = function(b) {
++      _bytes.push(b & 0xff);
++    };
++
++    _this.writeShort = function(i) {
++      _this.writeByte(i);
++      _this.writeByte(i >>> 8);
++    };
++
++    _this.writeBytes = function(b, off, len) {
++      off = off || 0;
++      len = len || b.length;
++      for (var i = 0; i < len; i += 1) {
++        _this.writeByte(b[i + off]);
++      }
++    };
++
++    _this.writeString = function(s) {
++      for (var i = 0; i < s.length; i += 1) {
++        _this.writeByte(s.charCodeAt(i) );
++      }
++    };
++
++    _this.toByteArray = function() {
++      return _bytes;
++    };
++
++    _this.toString = function() {
++      var s = '';
++      s += '[';
++      for (var i = 0; i < _bytes.length; i += 1) {
++        if (i > 0) {
++          s += ',';
++        }
++        s += _bytes[i];
++      }
++      s += ']';
++      return s;
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // base64EncodeOutputStream
++  //---------------------------------------------------------------------
++
++  var base64EncodeOutputStream = function() {
++
++    var _buffer = 0;
++    var _buflen = 0;
++    var _length = 0;
++    var _base64 = '';
++
++    var _this = {};
++
++    var writeEncoded = function(b) {
++      _base64 += String.fromCharCode(encode(b & 0x3f) );
++    };
++
++    var encode = function(n) {
++      if (n < 0) {
++        // error.
++      } else if (n < 26) {
++        return 0x41 + n;
++      } else if (n < 52) {
++        return 0x61 + (n - 26);
++      } else if (n < 62) {
++        return 0x30 + (n - 52);
++      } else if (n == 62) {
++        return 0x2b;
++      } else if (n == 63) {
++        return 0x2f;
++      }
++      throw 'n:' + n;
++    };
++
++    _this.writeByte = function(n) {
++
++      _buffer = (_buffer << 8) | (n & 0xff);
++      _buflen += 8;
++      _length += 1;
++
++      while (_buflen >= 6) {
++        writeEncoded(_buffer >>> (_buflen - 6) );
++        _buflen -= 6;
++      }
++    };
++
++    _this.flush = function() {
++
++      if (_buflen > 0) {
++        writeEncoded(_buffer << (6 - _buflen) );
++        _buffer = 0;
++        _buflen = 0;
++      }
++
++      if (_length % 3 != 0) {
++        // padding
++        var padlen = 3 - _length % 3;
++        for (var i = 0; i < padlen; i += 1) {
++          _base64 += '=';
++        }
++      }
++    };
++
++    _this.toString = function() {
++      return _base64;
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // base64DecodeInputStream
++  //---------------------------------------------------------------------
++
++  var base64DecodeInputStream = function(str) {
++
++    var _str = str;
++    var _pos = 0;
++    var _buffer = 0;
++    var _buflen = 0;
++
++    var _this = {};
++
++    _this.read = function() {
++
++      while (_buflen < 8) {
++
++        if (_pos >= _str.length) {
++          if (_buflen == 0) {
++            return -1;
++          }
++          throw 'unexpected end of file./' + _buflen;
++        }
++
++        var c = _str.charAt(_pos);
++        _pos += 1;
++
++        if (c == '=') {
++          _buflen = 0;
++          return -1;
++        } else if (c.match(/^\s$/) ) {
++          // ignore if whitespace.
++          continue;
++        }
++
++        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
++        _buflen += 6;
++      }
++
++      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
++      _buflen -= 8;
++      return n;
++    };
++
++    var decode = function(c) {
++      if (0x41 <= c && c <= 0x5a) {
++        return c - 0x41;
++      } else if (0x61 <= c && c <= 0x7a) {
++        return c - 0x61 + 26;
++      } else if (0x30 <= c && c <= 0x39) {
++        return c - 0x30 + 52;
++      } else if (c == 0x2b) {
++        return 62;
++      } else if (c == 0x2f) {
++        return 63;
++      } else {
++        throw 'c:' + c;
++      }
++    };
++
++    return _this;
++  };
++
++  //---------------------------------------------------------------------
++  // gifImage (B/W)
++  //---------------------------------------------------------------------
++
++  var gifImage = function(width, height) {
++
++    var _width = width;
++    var _height = height;
++    var _data = new Array(width * height);
++
++    var _this = {};
++
++    _this.setPixel = function(x, y, pixel) {
++      _data[y * _width + x] = pixel;
++    };
++
++    _this.write = function(out) {
++
++      //---------------------------------
++      // GIF Signature
++
++      out.writeString('GIF87a');
++
++      //---------------------------------
++      // Screen Descriptor
++
++      out.writeShort(_width);
++      out.writeShort(_height);
++
++      out.writeByte(0x80); // 2bit
++      out.writeByte(0);
++      out.writeByte(0);
++
++      //---------------------------------
++      // Global Color Map
++
++      // black
++      out.writeByte(0x00);
++      out.writeByte(0x00);
++      out.writeByte(0x00);
++
++      // white
++      out.writeByte(0xff);
++      out.writeByte(0xff);
++      out.writeByte(0xff);
++
++      //---------------------------------
++      // Image Descriptor
++
++      out.writeString(',');
++      out.writeShort(0);
++      out.writeShort(0);
++      out.writeShort(_width);
++      out.writeShort(_height);
++      out.writeByte(0);
++
++      //---------------------------------
++      // Local Color Map
++
++      //---------------------------------
++      // Raster Data
++
++      var lzwMinCodeSize = 2;
++      var raster = getLZWRaster(lzwMinCodeSize);
++
++      out.writeByte(lzwMinCodeSize);
++
++      var offset = 0;
++
++      while (raster.length - offset > 255) {
++        out.writeByte(255);
++        out.writeBytes(raster, offset, 255);
++        offset += 255;
++      }
++
++      out.writeByte(raster.length - offset);
++      out.writeBytes(raster, offset, raster.length - offset);
++      out.writeByte(0x00);
++
++      //---------------------------------
++      // GIF Terminator
++      out.writeString(';');
++    };
++
++    var bitOutputStream = function(out) {
++
++      var _out = out;
++      var _bitLength = 0;
++      var _bitBuffer = 0;
++
++      var _this = {};
++
++      _this.write = function(data, length) {
++
++        if ( (data >>> length) != 0) {
++          throw 'length over';
++        }
++
++        while (_bitLength + length >= 8) {
++          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
++          length -= (8 - _bitLength);
++          data >>>= (8 - _bitLength);
++          _bitBuffer = 0;
++          _bitLength = 0;
++        }
++
++        _bitBuffer = (data << _bitLength) | _bitBuffer;
++        _bitLength = _bitLength + length;
++      };
++
++      _this.flush = function() {
++        if (_bitLength > 0) {
++          _out.writeByte(_bitBuffer);
++        }
++      };
++
++      return _this;
++    };
++
++    var getLZWRaster = function(lzwMinCodeSize) {
++
++      var clearCode = 1 << lzwMinCodeSize;
++      var endCode = (1 << lzwMinCodeSize) + 1;
++      var bitLength = lzwMinCodeSize + 1;
++
++      // Setup LZWTable
++      var table = lzwTable();
++
++      for (var i = 0; i < clearCode; i += 1) {
++        table.add(String.fromCharCode(i) );
++      }
++      table.add(String.fromCharCode(clearCode) );
++      table.add(String.fromCharCode(endCode) );
++
++      var byteOut = byteArrayOutputStream();
++      var bitOut = bitOutputStream(byteOut);
++
++      // clear code
++      bitOut.write(clearCode, bitLength);
++
++      var dataIndex = 0;
++
++      var s = String.fromCharCode(_data[dataIndex]);
++      dataIndex += 1;
++
++      while (dataIndex < _data.length) {
++
++        var c = String.fromCharCode(_data[dataIndex]);
++        dataIndex += 1;
++
++        if (table.contains(s + c) ) {
++
++          s = s + c;
++
++        } else {
++
++          bitOut.write(table.indexOf(s), bitLength);
++
++          if (table.size() < 0xfff) {
++
++            if (table.size() == (1 << bitLength) ) {
++              bitLength += 1;
++            }
++
++            table.add(s + c);
++          }
++
++          s = c;
++        }
++      }
++
++      bitOut.write(table.indexOf(s), bitLength);
++
++      // end code
++      bitOut.write(endCode, bitLength);
++
++      bitOut.flush();
++
++      return byteOut.toByteArray();
++    };
++
++    var lzwTable = function() {
++
++      var _map = {};
++      var _size = 0;
++
++      var _this = {};
++
++      _this.add = function(key) {
++        if (_this.contains(key) ) {
++          throw 'dup key:' + key;
++        }
++        _map[key] = _size;
++        _size += 1;
++      };
++
++      _this.size = function() {
++        return _size;
++      };
++
++      _this.indexOf = function(key) {
++        return _map[key];
++      };
++
++      _this.contains = function(key) {
++        return typeof _map[key] != 'undefined';
++      };
++
++      return _this;
++    };
++
++    return _this;
++  };
++
++  // PNG compatibility: qrcode-generator 1.4.4 normally emits GIF here.
++  // Keep the upstream encoder intact while producing the PNG contract used
++  // by this app and its round-trip tests, without browser-only APIs.
++  var crcTable = (function() {
++    var table = [];
++    for (var n = 0; n < 256; n += 1) {
++      var c = n;
++      for (var k = 0; k < 8; k += 1) {
++        c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
++      }
++      table[n] = c >>> 0;
++    }
++    return table;
++  }());
++
++  var crc32 = function(bytes) {
++    var crc = 0xffffffff;
++    for (var i = 0; i < bytes.length; i += 1) {
++      crc = crcTable[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
++    }
++    return (crc ^ 0xffffffff) >>> 0;
++  };
++
++  var adler32 = function(bytes) {
++    var a = 1;
++    var b = 0;
++    for (var i = 0; i < bytes.length; i += 1) {
++      a = (a + bytes[i]) % 65521;
++      b = (b + a) % 65521;
++    }
++    return ((b << 16) | a) >>> 0;
++  };
++
++  var uint32 = function(value) {
++    return [value >>> 24 & 255, value >>> 16 & 255, value >>> 8 & 255, value & 255];
++  };
++
++  var pngChunk = function(type, data) {
++    var typeBytes = [];
++    for (var i = 0; i < type.length; i += 1) typeBytes.push(type.charCodeAt(i));
++    return uint32(data.length).concat(typeBytes, data, uint32(crc32(typeBytes.concat(data))));
++  };
++
++  var createDataURL = function(width, height, getPixel) {
++    var header = uint32(width).concat(uint32(height), [8, 0, 0, 0, 0]);
++    var raw = [];
++    for (var y = 0; y < height; y += 1) {
++      raw.push(0); // PNG scanline filter: None.
++      for (var x = 0; x < width; x += 1) raw.push(getPixel(x, y) ? 255 : 0);
++    }
++
++    // One or more uncompressed DEFLATE blocks inside a zlib stream.
++    var compressed = [0x78, 0x01];
++    for (var offset = 0; offset < raw.length; offset += 65535) {
++      var length = Math.min(65535, raw.length - offset);
++      compressed.push(offset + length === raw.length ? 1 : 0);
++      compressed.push(length & 255, length >>> 8 & 255, (~length) & 255, (~length) >>> 8 & 255);
++      for (var i = offset; i < offset + length; i += 1) compressed.push(raw[i]);
++    }
++    compressed = compressed.concat(uint32(adler32(raw)));
++
++    var png = [137, 80, 78, 71, 13, 10, 26, 10]
++      .concat(pngChunk('IHDR', header), pngChunk('IDAT', compressed), pngChunk('IEND', []));
++    var base64 = base64EncodeOutputStream();
++    for (var byteIndex = 0; byteIndex < png.length; byteIndex += 1) base64.writeByte(png[byteIndex]);
++    base64.flush();
++    return 'data:image/png;base64,' + base64;
++  };
++
++  //---------------------------------------------------------------------
++  // returns qrcode function.
++
++  return qrcode;
++}();
++
++// multibyte support
++!function() {
++
++  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
++    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
++    function toUTF8Array(str) {
++      var utf8 = [];
++      for (var i=0; i < str.length; i++) {
++        var charcode = str.charCodeAt(i);
++        if (charcode < 0x80) utf8.push(charcode);
++        else if (charcode < 0x800) {
++          utf8.push(0xc0 | (charcode >> 6),
++              0x80 | (charcode & 0x3f));
++        }
++        else if (charcode < 0xd800 || charcode >= 0xe000) {
++          utf8.push(0xe0 | (charcode >> 12),
++              0x80 | ((charcode>>6) & 0x3f),
++              0x80 | (charcode & 0x3f));
++        }
++        // surrogate pair
++        else {
++          i++;
++          // UTF-16 encodes 0x10000-0x10FFFF by
++          // subtracting 0x10000 and splitting the
++          // 20 bits of 0x0-0xFFFFF into two halves
++          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
++            | (str.charCodeAt(i) & 0x3ff));
++          utf8.push(0xf0 | (charcode >>18),
++              0x80 | ((charcode>>12) & 0x3f),
++              0x80 | ((charcode>>6) & 0x3f),
++              0x80 | (charcode & 0x3f));
++        }
++      }
++      return utf8;
++    }
++    return toUTF8Array(s);
++  };
++
++}();
++
++(function (factory) {
++  if (typeof define === 'function' && define.amd) {
++      define([], factory);
++  } else if (typeof exports === 'object') {
++      module.exports = factory();
++  }
++}(function () {
++    return qrcode;
++}));
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/SETUP.md ./SETUP.md
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/SETUP.md	1970-01-01 08:00:00.000000000 +0800
++++ ./SETUP.md	2026-11-24 16:38:21.672044300 +0800
+@@ -0,0 +1,71 @@
++# SSLG Office Attendance Setup
++
++## What this app stores
++
++The app stores names, random browser tokens, daily QR tokens, and timestamps. It does not store phone numbers.
++
++## Public admin warning
++
++The admin page has no password; anyone with its direct URL can view names and timestamps.
++
++## 1. Create the Sheet
++
++1. Create a blank Google Spreadsheet named `SSLG Office Attendance`.
++2. Copy its ID from the URL between `/d/` and `/edit`.
++
++## 2. Create the Apps Script project
++
++1. Open the new Spreadsheet.
++2. Select `Extensions → Apps Script`.
++
++## 3. Add files
++
++1. In the Apps Script project, create `Code.gs`, `Core.gs`, `Index.html`, `Styles.html`, `Client.html`, and `QRCodeLib.html`.
++2. Paste the contents of each matching project file into its corresponding Apps Script file.
++3. Open `Project Settings → Show appsscript.json` and replace the generated `appsscript.json` with the manifest from this project.
++
++## 4. Configure the Sheet
++
++1. In Apps Script, open `Project Settings → Script Properties`.
++2. Add a property named `SPREADSHEET_ID` and set its value to the ID copied from the Spreadsheet URL.
++3. Click `Save`.
++
++## 5. Deploy
++
++1. Click `Deploy → New deployment → Web app`.
++2. Set **Execute as** to **Me** (the deploying user).
++3. Set **Who has access** to **Anyone**.
++4. Click `Deploy` and authorize the requested Google permissions.
++5. Copy the deployment's web app URL for use by the office.
++
++## 6. Open the office page
++
++1. Append `?page=admin` to the deployed `/exec` URL.
++2. Open that admin URL and generate a QR pair for today.
++
++## 7. Test
++
++1. On a phone, scan the IN code.
++2. Register a name and confirm.
++3. Scan the OUT code on the same phone and confirm the remembered name.
++4. Check the Sheet and the office list.
++
++A live deployment is not verified until the owner completes the scan test in this guide.
++
++## 8. Daily use
++
++1. Generate a fresh pair each morning.
++2. Print the cards.
++3. Do not reuse yesterday’s codes.
++
++## 9. CSV
++
++1. On the office page, choose a date.
++2. Click `Export CSV`.
++
++## 10. Troubleshooting
++
++- `SPREADSHEET_NOT_CONFIGURED`: Add the `SPREADSHEET_ID` Script Property with the copied Spreadsheet ID, save it, and deploy a new version of the web app.
++- Expired or invalid codes: Use today's freshly generated pair. Codes from a different date expire at the end of that Manila calendar day; generating a new pair replaces an older pair. If a scan says the code is invalid or the action does not match, ask the office to generate and print a new pair.
++- Sheet permission errors: Confirm that the deploying user owns or can edit `SSLG Office Attendance`, that `SPREADSHEET_ID` identifies that Sheet, and that the requested Google permissions were authorized. After fixing access or configuration, deploy a new version.
++- Browser local-storage loss: The remembered name depends on browser site storage. If storage is blocked or cleared, the phone may ask for the name again. Use the same browser and allow site storage to retain it.
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Styles.html ./Styles.html
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/Styles.html	1970-01-01 08:00:00.000000000 +0800
++++ ./Styles.html	2026-11-24 17:14:48.730964400 +0800
+@@ -0,0 +1,206 @@
++<style>
++  :root {
++    color-scheme: light;
++    --navy: #102a43;
++    --teal: #0f766e;
++    --teal-dark: #0b5d56;
++    --paper: #f6f3ec;
++    --white: #ffffff;
++    --ink: #172b4d;
++    --muted: #627d98;
++    --line: #d9e2ec;
++    --amber: #b45309;
++    --amber-bg: #fff7ed;
++    --red: #b42318;
++    --red-bg: #fef3f2;
++    --green-bg: #ecfdf3;
++    --shadow: 0 18px 50px rgba(16, 42, 67, 0.10);
++    --font-body: "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
++    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
++    font-family: var(--font-body);
++  }
++
++  * { box-sizing: border-box; }
++  body {
++    margin: 0;
++    min-height: 100vh;
++    color: var(--ink);
++    background:
++      radial-gradient(circle at 10% 0%, rgba(15, 118, 110, 0.12), transparent 32rem),
++      var(--paper);
++  }
++  button, input { font: inherit; }
++  button { cursor: pointer; }
++  button:disabled { cursor: wait; opacity: 0.65; }
++  [hidden] { display: none !important; }
++
++  .site-header {
++    width: min(100% - 32px, 960px);
++    margin: 24px auto 18px;
++    display: flex;
++    align-items: center;
++    gap: 12px;
++  }
++  .brand-mark {
++    width: 46px;
++    height: 46px;
++    display: grid;
++    place-items: center;
++    border-radius: 14px;
++    color: var(--white);
++    background: var(--navy);
++    font-size: 1.35rem;
++    font-weight: 800;
++    letter-spacing: -0.04em;
++  }
++  .eyebrow {
++    margin: 0 0 4px;
++    color: var(--teal);
++    font-size: 0.72rem;
++    font-weight: 800;
++    letter-spacing: 0.13em;
++    text-transform: uppercase;
++  }
++  h1, h2, p { margin-top: 0; }
++  h1 { margin-bottom: 0; color: var(--navy); font-family: var(--font-display); font-size: 1.25rem; }
++  h2 { margin-bottom: 12px; color: var(--navy); font-family: var(--font-display); font-size: clamp(1.55rem, 5vw, 2rem); font-weight: 600; letter-spacing: -0.035em; }
++
++  #app {
++    width: min(100% - 32px, 960px);
++    margin: 0 auto;
++    outline: none;
++  }
++  .card {
++    margin-bottom: 18px;
++    padding: clamp(22px, 5vw, 34px);
++    border: 1px solid rgba(217, 226, 236, 0.9);
++    border-radius: 24px;
++    background: var(--white);
++    box-shadow: var(--shadow);
++  }
++  .scan-card, .success-card, .loading-card { max-width: 480px; margin-inline: auto; }
++  .scan-meta { color: var(--muted); font-size: 0.9rem; }
++  .welcome { margin: 26px 0 4px; color: var(--muted); }
++  .registered-name { margin-bottom: 24px; color: var(--navy); font-size: 1.45rem; font-weight: 750; overflow-wrap: anywhere; }
++  .helper-text { margin: 14px 0 0; color: var(--muted); font-size: 0.84rem; line-height: 1.55; }
++
++  .field { display: grid; gap: 8px; margin: 18px 0; color: var(--navy); font-size: 0.86rem; font-weight: 700; }
++  .field input {
++    width: 100%;
++    min-height: 52px;
++    padding: 12px 14px;
++    border: 1px solid var(--line);
++    border-radius: 12px;
++    color: var(--ink);
++    background: #fbfcfd;
++    outline: none;
++  }
++  .field input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.13); }
++  .button {
++    width: 100%;
++    min-height: 52px;
++    padding: 13px 18px;
++    border: 0;
++    border-radius: 12px;
++    color: var(--navy);
++    background: #eaf0f5;
++    font-weight: 800;
++  }
++  .button-primary { color: var(--white); background: var(--teal); }
++  .button-primary:hover { background: var(--teal-dark); }
++  .button-out { color: var(--white); background: var(--navy); }
++  .button-out:hover { background: #0b1f33; }
++  .button:focus-visible { outline: 3px solid rgba(15, 118, 110, 0.35); outline-offset: 3px; }
++
++  .notice { margin: 18px 0 0; padding: 13px 15px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; }
++  .notice-error { color: var(--red); background: var(--red-bg); }
++  .success-card { text-align: center; }
++  .success-mark {
++    width: 64px;
++    height: 64px;
++    margin: 0 auto 22px;
++    display: grid;
++    place-items: center;
++    border-radius: 50%;
++    color: var(--teal);
++    background: var(--green-bg);
++    font-size: 1.1rem;
++    font-weight: 850;
++  }
++  .spinner {
++    width: 34px;
++    height: 34px;
++    margin: 0 auto 16px;
++    border: 3px solid var(--line);
++    border-top-color: var(--teal);
++    border-radius: 50%;
++    animation: spin 0.8s linear infinite;
++  }
++  @keyframes spin { to { transform: rotate(360deg); } }
++
++  .admin-card { max-width: 960px; margin-inline: auto; }
++  .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
++  .qr-card { padding: 20px; border: 2px solid var(--line); border-radius: 18px; text-align: center; break-inside: avoid; }
++  .qr-card img { display: block; width: min(100%, 320px); height: auto; margin: 12px auto; image-rendering: pixelated; }
++  .qr-card p { margin-bottom: 6px; font-weight: 750; }
++  .qr-card small { color: var(--muted); }
++  .qr-in { border-color: rgba(15, 118, 110, 0.42); background: #f2fbf9; }
++  .qr-out { border-color: rgba(16, 42, 67, 0.30); background: #f5f8fb; }
++
++  .totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
++  .totals div { padding: 14px; border-radius: 12px; background: #f3f6f9; }
++  .totals strong { display: block; color: var(--navy); font-size: 1.35rem; }
++  .totals span { color: var(--muted); font-size: 0.76rem; }
++  .table-wrap { overflow-x: auto; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 12px; }
++  .attendance-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
++  .attendance-table th, .attendance-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
++  .attendance-table th { color: var(--muted); background: #f8fafc; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
++  .attendance-table tr:last-child td { border-bottom: 0; }
++  .mode { display: inline-block; min-width: 44px; padding: 4px 8px; border-radius: 999px; text-align: center; font-size: 0.72rem; font-weight: 850; }
++  .mode-in { color: var(--teal); background: #d9f3ee; }
++  .mode-out { color: var(--navy); background: #e4ebf2; }
++
++  .site-footer { width: min(100% - 32px, 960px); margin: 26px auto; color: var(--muted); font-size: 0.76rem; text-align: center; }
++
++  @media (max-width: 620px) {
++    .site-header { margin-top: 16px; }
++    .card { border-radius: 18px; }
++    .admin-grid { grid-template-columns: 1fr; }
++    .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  }
++
++  @media print {
++    @page { margin: 12mm; }
++    body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
++    body > :not(#app),
++    #app > .card:not(:first-child),
++    #app > .card:first-child > :not(#qr-pair) { display: none !important; }
++    #app > .card:first-child { margin: 0; padding: 0; border: 0; box-shadow: none; }
++    body * { visibility: hidden !important; }
++    #qr-pair, #qr-pair * { visibility: visible !important; }
++    #qr-pair {
++      position: static;
++      display: grid;
++      grid-template-columns: repeat(2, minmax(0, 1fr));
++      gap: 8mm;
++      width: 100%;
++      margin: 0;
++    }
++    .qr-card {
++      padding: 4mm;
++      border: 1px solid #999;
++      background: #fff !important;
++      break-inside: avoid;
++      page-break-inside: avoid;
++    }
++    .qr-card img {
++      width: 72mm;
++      min-width: 240px;
++      max-width: 100%;
++      height: auto;
++      margin: 5mm auto;
++      print-color-adjust: exact;
++      -webkit-print-color-adjust: exact;
++    }
++  }
++</style>
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/VERIFICATION.md ./VERIFICATION.md
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/VERIFICATION.md	1970-01-01 08:00:00.000000000 +0800
++++ ./VERIFICATION.md	2026-11-24 22:18:00.192914500 +0800
+@@ -0,0 +1,251 @@
++# SSLG QR Attendance Verification
++
++**Verification date:** 2026-11-24  
++**Local verification status:** PASS  
++**Real Google Apps Script/Sheets smoke test:** **Pending owner deployment**
++
++## Environment and method
++
++- Workspace: `C:/Users/Ma Christine/Downloads/SSLG MEMOS`
++- App: `C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App`
++- OS: Windows 10.0.26200, x64; shell: Git Bash
++- Observed runtime: Node.js `v26.13.1`, npm `11.20.0` (the environment notice listed Node `v24.22.1`; the commands actually ran under `v26.13.1`, which satisfies `node >=20`)
++- Browser: installed Playwright MCP, Chromium `Chrome/157.0.0.0`, `en-US`, Win32
++- Desktop viewport: `1440×1000`
++- Mobile viewport: fresh isolated browser context, `390×844`; mobile media query matched and document width equalled client width (`375px`, with no horizontal overflow)
++- Attendance date: Manila date `2026-11-24`
++- Backend: local preview with in-memory mocked Apps Script/Sheets behavior; no Google credentials, Spreadsheet ID, or external deployment was used
++
++## Automated commands and results
++
++Working directory: `SSLG Attendance App/`.
++
++```text
++$ npm install
++up to date, audited 4 packages in 27s
++found 0 vulnerabilities
++```
++
++```text
++$ npm test
++> sslg-office-attendance@1.0.0 test
++> node --test
++ℹ tests 32
++ℹ suites 0
++ℹ pass 32
++ℹ fail 0
++ℹ cancelled 0
++ℹ skipped 0
++ℹ todo 0
++```
++
++The original Task 7 run recorded durations of `2580.9216ms` and `1746.7284ms`; both runs reported `32` tests, `32` pass, `0` fail, `0` cancelled, `0` skipped, and `0` todo. The print-layout PASS below applies to the corrected `Styles.html`, not to the baseline print behavior. Fix round 1 reran `npm test` after the documentation corrections and scratch-PDF cleanup; its fresh result is recorded after the defect evidence below.
++
++The suite covered core/backend rules, client static and admin race behavior, QR decode round-trips, preview API behavior, and packaging.
++
++## Preview process
++
++```text
++$ npm run preview
++> sslg-office-attendance@1.0.0 preview
++> node preview/server.cjs
++SSLG attendance preview: http://127.0.0.1:4173
++```
++
++The preview was started as background task `b15je8567`. Both browser contexts were closed, that task alone was stopped, and `netstat -ano | findstr ':4173' || true` returned no output afterward.
++
++## URLs tested
++
++All URLs below are local-preview URLs. QR tokens were copied from actual `admin.generate` response bodies, not invented.
++
++### Desktop office URL
++
++- `http://127.0.0.1:4173/?page=admin`
++
++### Pair A — generated at `2026-11-24T21:00:50+08:00`
++
++- IN, opened in the fresh mobile context and reopened for the repeated scan:  
++  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=IN&code=2a57530d-6f2d-46ca-bfe3-50e98f9ce2f6`
++- OUT, opened in the same mobile context:  
++  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=OUT&code=5dbdc492-622a-4ad8-ac90-a1b1ff80194c`
++
++### Pair B — regeneration at `2026-11-24T21:24:59+08:00`
++
++- Previous Pair A IN URL: reopened and correctly rejected.
++- New IN, opened in the same mobile context for offline failure and retry:  
++  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=IN&code=24933dd4-1cd7-4a46-bc83-eb051933d762`
++- Generated OUT URL, not opened during this run:  
++  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=OUT&code=83f09141-6a24-455a-9a82-e91ac0072917`
++
++### Pair C — generated for print verification at `2026-11-24T21:30:15+08:00`
++
++- Generated IN URL, printed as a QR card but not opened:  
++  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=IN&code=228d26aa-e77a-40de-bcf5-43aec441efcb`
++- Generated OUT URL, printed as a QR card but not opened:  
++  `http://127.0.0.1:4173/?page=scan&date=2026-11-24&mode=OUT&code=0d5fd135-6286-46d6-90b1-1d5d567e3fa5`
++
++## Browser checklist
++
++| Step | Result | Observed evidence |
++| --- | --- | --- |
++| 3. Office golden path | PASS | Desktop admin date was `2026-11-24`. Generate confirmation read `Generate new IN and OUT codes? The previous pair for this date will stop working.` Two images rendered with `Check in` / `Check out`, date `2026-11-24`, and `Created 2026-11-24T21:00:50+08:00`. Empty list read `No scans recorded for this date.` Totals were `0 Scans`, `0 People`, `0 IN`, `0 OUT`. Search `No such attendee` caused no console error. Export offered `SSLG-attendance-2026-11-24.csv`, failure `null`. |
++| 4. New-user mobile registration | PASS | Fresh mobile context showed `Record your arrival`, `Your name`, and `Register and check in`; no admin link. Submitting `Ana Cruz` showed `Recorded`, `Checked in`, `Ana Cruz`, `2026-11-24T21:14:21+08:00 · Philippines time`, and `You may close this page.` Office then showed one IN row and totals `1 Scans`, `1 People`, `1 IN`, `0 OUT`. |
++| 5. Returning recognition and repeated scans | PASS | OUT page showed `Continuing as` / `Ana Cruz` and `Confirm check out`, with no name form or login. Success read `Checked out`, `Ana Cruz`, `2026-11-24T21:16:09+08:00 · Philippines time`; office totals became `2 Scans`, `1 People`, `1 IN`, `1 OUT`. Reopening IN showed `Continuing as` / `Ana Cruz` and `Confirm check in`; success timestamp was `2026-11-24T21:23:10+08:00`. Office showed three separate rows and totals `3 Scans`, `1 People`, `2 IN`, `1 OUT`; no duplicate-open-session message appeared. |
++| 6. Invalidation and failed request | PASS | Regeneration produced Pair B. Previous IN returned HTTP 200 with `{"ok":false,"error":"INVALID_CODE"}` and displayed `This QR code is no longer valid. A newer code may have been generated.` No row was added. With Pair B IN loaded, browser context offline state set `navigator.onLine=false` before confirmation. UI showed `The scan was not recorded. Check your connection and try again.`, no success heading, remembered `Ana Cruz`, and an enabled retry button. After reconnecting, retry showed `Checked in` at `2026-11-24T21:27:36+08:00`. Office then showed exactly four rows: the prior three plus one retry row, with the new row using `qr_created_at=2026-11-24T21:24:59+08:00`. |
++| 7. Print layout | PASS after fix | Generated Pair C, emulated `media=print`, and inspected computed print state after correcting `Styles.html`. Exactly 11 rendered visible elements existed, all `#qr-pair` or its two card descendants. Both QR images had natural size `336×336` and rendered print size `272.13×272.13px`; cards were `464.88×405.13px` and `464.89×405.13px`. Header/footer had `display:none`; buttons, filters, totals, and attendance table were hidden with zero bounds; the attendance card had `display:none`. Post-fix Chromium PDF `.task7-print-fixed.pdf` had one page; baseline `.task7-print.pdf` had two pages, with the second blank. |
++
++## Search, totals, date filter, and CSV evidence
++
++- Search `ana`: three visible rows, while totals remained `3 Scans`, `1 People`, `2 IN`, `1 OUT` before regeneration.
++- Search `nobody`: zero visible rows and `No scans recorded for this date.`, while totals remained based on the full date.
++- Export after three scans offered `SSLG-attendance-2026-11-24.csv`, failure `null`; its header was `"event_id","date","scanned_at","mode","name","device_token","qr_created_at"` and it contained three data rows. Device-token values are intentionally omitted from this report.
++- Date `2026-11-23`: `admin.list` returned totals `{scans:0,people:0,in:0,out:0}` and zero rows; export offered `SSLG-attendance-2026-11-23.csv`.
++- Date restored to `2026-11-24`: four rows and totals `{scans:4,people:1,in:3,out:1}`.
++
++## Exact critical UI text
++
++### Registration success
++
++```text
++OK
++RECORDED
++Checked in
++Ana Cruz
++2026-11-24T21:14:21+08:00 · Philippines time
++You may close this page.
++```
++
++### Returning recognition before OUT confirmation
++
++```text
++Check out
++Record your departure
++2026-11-24 · SSLG Office
++Continuing as
++Ana Cruz
++Confirm check out
++```
++
++### Invalid regenerated code
++
++```text
++This QR code is no longer valid. A newer code may have been generated.
++```
++
++### Offline failure before retry
++
++```text
++CHECK IN
++Record your arrival
++2026-11-24 · SSLG Office
++Continuing as
++Ana Cruz
++Confirm check in
++The scan was not recorded. Check your connection and try again.
++```
++
++### Successful retry
++
++```text
++OK
++RECORDED
++Checked in
++Ana Cruz
++2026-11-24T21:27:36+08:00 · Philippines time
++You may close this page.
++```
++
++### Post-fix print-media visible card text
++
++```text
++CHECK IN
++2026-11-24
++Created 2026-11-24T21:30:15+08:00
++
++CHECK OUT
++2026-11-24
++Created 2026-11-24T21:30:15+08:00
++```
++
++## Console and network review
++
++- Desktop: Playwright console inspection reported `Total messages: 0 (Errors: 0, Warnings: 0)`. All observed admin API requests returned HTTP 200.
++- Mobile: all normal `scan.status` and `scan.record` requests returned HTTP 200. The deliberate offline request was recorded as `[FAILED] net::ERR_INTERNET_DISCONNECTED`; the retry returned HTTP 200.
++- Mobile console contained exactly one expected resource error: `Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ http://127.0.0.1:4173/api/scan.record:0`.
++- The offline interaction had zero uncaught `pageerror` events. No uncaught application errors were observed. Invalid-code responses were HTTP 200 with `ok:false`, not transport failures.
++- No device token or QR token was logged by application console code. Tokens shown in this report are local QR URLs obtained from the preview API; device-token values are redacted.
++
++## Defects and fixes
++
++### Print-layout defect found and fixed
++
++- **Defect:** Printing the office page did not reliably produce only the two QR cards on one page.
++- **Root cause:** The baseline `@media print` rules hid most content with `visibility:hidden`, which retains layout space, while `#qr-pair` was absolutely positioned with `top:0; left:0`. The hidden page structure could still contribute to pagination, and the absolutely positioned QR pair was outside normal flow.
++- **RED / before:** Against baseline `Styles.html`, Chromium print output `.task7-print.pdf` contained **2 pages**, and the **second page was blank**.
++- **Minimal fix:** In `Styles.html` only, the print block adds explicit `display:none` rules for non-app body children, non-first app cards, and first-card children other than `#qr-pair`; resets the first card's print spacing/border; and changes `#qr-pair` from absolute positioning to `position:static`. Screen layout and attendance behavior were not changed.
++- **GREEN / after:** With that fix, Chromium print output `.task7-print-fixed.pdf` contained **1 page**. The post-fix computed-state evidence in Step 7 showed only `#qr-pair` and its two card descendants rendered visibly, with both QR images legible and controls, header, footer, totals, and attendance content absent.
++- **Print verdict:** **PASS after the fix.** This verdict does not describe the baseline's failing two-page output.
++- **Cleanup:** `.task7-print.pdf`, `.task7-print-hypothesis.pdf`, and `.task7-print-fixed.pdf` were session-created scratch artifacts, absent from the `before-task-7` snapshot. They were removed after their evidence was recorded; they are not app deliverables.
++
++No tests, package files, configuration, dependencies, or product features were changed. The existing automated suite was rerun after the documentation corrections and cleanup.
++
++### Fix round 1 fresh test result
++
++Working directory: `SSLG Attendance App/`.
++
++```text
++$ npm test
++> sslg-office-attendance@1.0.0 test
++> node --test
++ℹ tests 32
++ℹ suites 0
++ℹ pass 32
++ℹ fail 0
++ℹ cancelled 0
++ℹ skipped 0
++ℹ todo 0
++ℹ duration_ms 1635.67
++```
++
++Exit code: `0`.
++
++## Ten-criterion acceptance audit
++
++| # | Acceptance criterion | Verdict | Evidence |
++| --- | --- | --- | --- |
++| 1 | A new phone can scan a valid IN code, enter a name once, and create exactly one Attendance row. | PASS | Fresh mobile context registered `Ana Cruz`; office list had exactly one IN row and totals `1/1/1/0`. Automated registration tests also passed. |
++| 2 | The same phone recognizes the saved name on a later scan without asking for a login or name again. | PASS | Same isolated mobile context showed `Continuing as Ana Cruz` for OUT and later IN, with confirmation buttons and no name form/login. |
++| 3 | A valid OUT scan creates an Attendance row with mode `OUT` and the server timestamp. | PASS | OUT success at `2026-11-24T21:16:09+08:00`; office row had mode `OUT`, matching Manila timestamp, and Pair A creation time. |
++| 4 | Multiple valid scans create multiple rows; no in/out pairing rule blocks them. | PASS | IN → OUT → IN produced three distinct rows; no duplicate-open-session message. Totals `3 Scans`, `1 People`, `2 IN`, `1 OUT`. |
++| 5 | Codes are date-bound in Asia/Manila time and become invalid when regenerated. | PASS | Manila-date core tests passed. Browser regeneration invalidated Pair A IN with `INVALID_CODE`; Pair B retry row carried Pair B's creation timestamp. |
++| 6 | Invalid codes and failed requests create no Attendance row and never show false success. | PASS | Invalid code added no row. Offline confirmation showed the not-recorded message and zero success headings; after one successful retry the total rose only from three to four. Automated rejection tests passed. |
++| 7 | The office can generate both QR codes, see their creation times, filter records, and export CSV. | PASS | Pair A/B/C generation, visible creation timestamps, search/date filtering, totals, and correctly named CSV downloads were observed. |
++| 8 | The Spreadsheet contains the documented `Daily Codes`, `People`, and `Attendance` tabs and columns. | PENDING | Mock-backed schema tests passed, but no owner Spreadsheet was available. **Pending owner deployment** real Sheets inspection. |
++| 9 | The student flow contains no admin link or attendance list. | PASS | Mobile snapshots and DOM checks found zero admin links and zero attendance tables; static navigation tests passed. |
++| 10 | Automated tests and local browser checks pass; deployment-specific checks remain explicitly pending until run on the owner's account. | PASS | The original full runs and the fix-round fresh run each passed `32/32`; desktop/mobile golden paths, recognition, repeats, invalidation, offline/retry, filtering, CSV, post-fix print media, and console/network checks passed locally. Real Apps Script/Sheets checks are explicitly **Pending owner deployment**. |
++
++## Pending owner deployment checks
++
++**Status: Pending owner deployment.** The local preview is not evidence about the owner's Google Spreadsheet or Apps Script execution.
++
++The owner still needs to:
++
++1. Configure the Spreadsheet ID and `Asia/Manila` timezone in the owner's Apps Script project.
++2. Deploy with the intended anyone-with-link access.
++3. Generate today's real codes.
++4. Scan IN on a phone, register a name, and confirm exactly one real `Attendance` row.
++5. Scan OUT on the same phone and confirm recognition plus a second real row.
++6. Regenerate and confirm the earlier codes are rejected without writes.
++7. Confirm the real office list and CSV show the real records.
++8. Inspect the real `Daily Codes`, `People`, and `Attendance` tabs and documented columns.
++
++## Scope and self-review
++
++- Re-read Task 7 Steps 1–10 and the ten acceptance criteria before recording results.
++- Used actual Playwright browser interactions at both required widths; static inspection was not substituted for browser checks.
++- Offline mode was genuinely exercised with Playwright browser-context offline control, not inferred from source.
++- No subagents or reviewers were dispatched; no Git commands or commits were run.
++- No phone number, login, private admin authentication, attendance-semantics change, credential, Spreadsheet ID, or external URL was introduced.
++- Task 7 changed `SSLG Attendance App/Styles.html` for the minimal print fix, added `SSLG Attendance App/VERIFICATION.md`, and removed its own three temporary scratch PDFs. It also created the approved SDD report outside the app at `.superpowers/sdd/2026-11-24-sslg-qr-attendance/task-7-report.md`.
++- The final app-source comparison against `before-task-7` (excluding `node_modules`) contains only modified `Styles.html` and added `VERIFICATION.md`. The three scratch PDFs were absent from that baseline and are absent after cleanup. No unsupported vault-wide file counts or whole-vault hash claims are made.
++- Print RED/GREEN evidence is Chromium print-media emulation, computed layout, and generated PDF page counts, not a physical-printer test. Mobile evidence is an isolated Chromium context at `390×844`, not a physical phone or native-camera scan.
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/appsscript.json ./appsscript.json
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/appsscript.json	1970-01-01 08:00:00.000000000 +0800
++++ ./appsscript.json	2026-11-24 16:38:20.834141000 +0800
+@@ -0,0 +1,13 @@
++{
++  "timeZone": "Asia/Manila",
++  "dependencies": {},
++  "webapp": {
++    "executeAs": "USER_DEPLOYING",
++    "access": "ANYONE_ANONYMOUS"
++  },
++  "exceptionLogging": "STACKDRIVER",
++  "runtimeVersion": "V8",
++  "oauthScopes": [
++    "https://www.googleapis.com/auth/spreadsheets"
++  ]
++}
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/package-lock.json ./package-lock.json
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/package-lock.json	1970-01-01 08:00:00.000000000 +0800
++++ ./package-lock.json	2026-11-24 20:57:34.296590100 +0800
+@@ -0,0 +1,44 @@
++{
++  "name": "sslg-office-attendance",
++  "version": "1.0.0",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "sslg-office-attendance",
++      "version": "1.0.0",
++      "devDependencies": {
++        "jsqr": "^1.4.0",
++        "pngjs": "^7.0.0",
++        "qrcode-generator": "^1.4.4"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/jsqr": {
++      "version": "1.4.0",
++      "resolved": "https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz",
++      "integrity": "sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==",
++      "dev": true,
++      "license": "Apache-2.0"
++    },
++    "node_modules/pngjs": {
++      "version": "7.0.0",
++      "resolved": "https://registry.npmjs.org/pngjs/-/pngjs-7.0.0.tgz",
++      "integrity": "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=14.19.0"
++      }
++    },
++    "node_modules/qrcode-generator": {
++      "version": "1.5.2",
++      "resolved": "https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-1.5.2.tgz",
++      "integrity": "sha512-pItrW0Z9HnDBnFmgiNrY1uxRdri32Uh9EjNYLPVC2zZ3ZRIIEqBoDgm4DkvDwNNDHTK7FNkmr8zAa77BYc9xNw==",
++      "dev": true,
++      "license": "MIT"
++    }
++  }
++}
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/package.json ./package.json
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/package.json	1970-01-01 08:00:00.000000000 +0800
++++ ./package.json	2026-11-24 13:30:49.313483900 +0800
+@@ -0,0 +1,19 @@
++{
++  "name": "sslg-office-attendance",
++  "version": "1.0.0",
++  "private": true,
++  "description": "Daily SSLG office QR check-in and check-out app for Google Sheets",
++  "scripts": {
++    "test": "node --test",
++    "test:core": "node --test tests/core.test.cjs",
++    "preview": "node preview/server.cjs"
++  },
++  "devDependencies": {
++    "jsqr": "^1.4.0",
++    "pngjs": "^7.0.0",
++    "qrcode-generator": "^1.4.4"
++  },
++  "engines": {
++    "node": ">=20"
++  }
++}
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/preview/server.cjs ./preview/server.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/preview/server.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./preview/server.cjs	2026-11-24 15:57:07.823744900 +0800
+@@ -0,0 +1,103 @@
++const http = require('node:http');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++const { randomUUID } = require('node:crypto');
++
++const root = path.join(__dirname, '..');
++
++function loadCore() {
++  const context = vm.createContext({ console, Date, Intl, JSON });
++  vm.runInContext(fs.readFileSync(path.join(root, 'Core.gs'), 'utf8'), context);
++  context.ATTENDANCE_HEADERS = vm.runInContext('ATTENDANCE_HEADERS', context);
++  return context;
++}
++
++function renderIndex() {
++  return fs.readFileSync(path.join(root, 'Index.html'), 'utf8')
++    .replace(/<\?!= include\('Styles'\); \?>/, () => fs.readFileSync(path.join(root, 'Styles.html'), 'utf8'))
++    .replace(/<\?!= include\('QRCodeLib'\); \?>/, () => fs.readFileSync(path.join(root, 'QRCodeLib.html'), 'utf8'))
++    .replace(/<\?!= include\('Client'\); \?>/, () => fs.readFileSync(path.join(root, 'Client.html'), 'utf8'));
++}
++
++function createPreviewServer() {
++  const core = loadCore();
++  const state = { codes: new Map(), people: new Map(), attendance: [] };
++  const baseUrl = process.env.PREVIEW_PUBLIC_URL || 'http://127.0.0.1:4173';
++
++  const server = http.createServer(async (request, response) => {
++    response.setHeader('Content-Type', 'application/json; charset=utf-8');
++    if (request.method === 'GET' && request.url.startsWith('/')) {
++      response.setHeader('Content-Type', 'text/html; charset=utf-8');
++      response.end(renderIndex());
++      return;
++    }
++    if (request.method === 'POST' && request.url.startsWith('/api/')) {
++      const action = request.url.slice('/api/'.length);
++      let payload;
++      let result;
++      try {
++        let raw = '';
++        for await (const chunk of request) raw += chunk;
++        payload = JSON.parse(raw || '{}');
++        if (action === 'admin.generate') {
++          const record = core.createDailyCodeRecord_(payload.date, new Date(), randomUUID);
++          state.codes.set(payload.date, {
++            ...record,
++            in_url: `${baseUrl}/?page=scan&date=${payload.date}&mode=IN&code=${record.in_code}`,
++            out_url: `${baseUrl}/?page=scan&date=${payload.date}&mode=OUT&code=${record.out_code}`
++          });
++          result = { ok: true, record: state.codes.get(payload.date) };
++        } else if (action === 'scan.status' || action === 'scan.record') {
++          const code = state.codes.get(payload.date);
++          const validation = core.validateScan_(payload, code, new Date());
++          if (!validation.ok) result = validation;
++          else {
++            const deviceToken = String(payload.device_token || '');
++            if (!deviceToken || deviceToken.length > 100) result = { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++            else {
++              const person = state.people.get(deviceToken);
++              if (action === 'scan.status') {
++                result = { ok: true, date: validation.date, mode: validation.mode, name: person ? person.name : null, device_token: deviceToken, qr_created_at: validation.qr_created_at };
++              } else {
++                const name = core.normalizeName_(person ? person.name : payload.name);
++                const now = core.manilaTimestamp_(new Date());
++                if (!person) state.people.set(deviceToken, { name, first_seen_at: now, last_seen_at: now });
++                else person.last_seen_at = now;
++                const event = { event_id: randomUUID(), date: validation.date, scanned_at: now, mode: validation.mode, name, device_token: deviceToken, qr_created_at: validation.qr_created_at };
++                state.attendance.push(event);
++                result = { ok: true, event };
++              }
++            }
++          }
++        } else if (action === 'admin.list') {
++          const normalizedQuery = String(payload.query || '').trim().toLowerCase();
++          const rows = state.attendance.filter(row => row.date === payload.date && (!normalizedQuery || String(row.name).toLowerCase().includes(normalizedQuery))).reverse();
++          const all = state.attendance.filter(row => row.date === payload.date);
++          result = { ok: true, rows, totals: { scans: all.length, people: new Set(all.map(row => row.device_token)).size, in: all.filter(row => row.mode === 'IN').length, out: all.filter(row => row.mode === 'OUT').length } };
++        } else if (action === 'admin.export') {
++          const rows = state.attendance.filter(row => row.date === payload.date);
++          result = { ok: true, csv: core.toCsv_(core.ATTENDANCE_HEADERS, rows.map(row => core.ATTENDANCE_HEADERS.map(header => row[header]))), filename: `SSLG-attendance-${payload.date}.csv` };
++        } else {
++          result = { ok: false, error: 'UNKNOWN_ACTION' };
++        }
++      } catch (error) {
++        result = { ok: false, error: error.message || 'REQUEST_FAILED' };
++      }
++      response.end(JSON.stringify(result));
++      return;
++    }
++    response.statusCode = 404;
++    response.end(JSON.stringify({ ok: false, error: 'NOT_FOUND' }));
++  });
++  return server;
++}
++
++if (require.main === module) {
++  const port = Number(process.env.PORT || 4173);
++  createPreviewServer().listen(port, '127.0.0.1', () => {
++    console.log(`SSLG attendance preview: http://127.0.0.1:${port}`);
++  });
++}
++
++module.exports = { createPreviewServer };
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/backend.test.cjs ./tests/backend.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/backend.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/backend.test.cjs	2026-11-24 13:48:21.167274600 +0800
+@@ -0,0 +1,132 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++
++function loadBackend() {
++  const sheets = new Map();
++  const properties = { SPREADSHEET_ID: 'sheet-test-id' };
++  let uuid = 0;
++  let baseUrl = 'https://script.test/exec';
++
++  function makeSheet(name) {
++    if (!sheets.has(name)) sheets.set(name, []);
++    const rows = sheets.get(name);
++    return {
++      getLastRow: () => rows.length,
++      getRange: (row, column, count) => ({
++        getValues: () => rows.slice(row - 1, row - 1 + count),
++        setValues: values => { rows.splice(row - 1, count, ...values); }
++      }),
++      appendRow: row => rows.push(row),
++      getLastColumn: () => rows[0] ? rows[0].length : 0,
++      getFrozenRows: () => 0,
++      setFrozenRows: () => {}
++    };
++  }
++
++  const spreadsheet = {
++    getSheetByName: name => sheets.has(name) ? makeSheet(name) : null,
++    insertSheet: name => { sheets.set(name, []); return makeSheet(name); }
++  };
++
++  const context = vm.createContext({
++    console,
++    Date,
++    Intl,
++    JSON,
++    PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties[key] || null }) },
++    SpreadsheetApp: { openById: () => spreadsheet },
++    LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
++    Utilities: { getUuid: () => `uuid-${++uuid}` },
++    ScriptApp: { getService: () => ({ getUrl: () => baseUrl }) },
++    HtmlService: { createTemplateFromFile: () => ({ evaluate: () => 'html' }) },
++    ContentService: {
++      MimeType: { JSON: 'application/json' },
++      createTextOutput: text => ({ setMimeType: () => ({ text }) })
++    }
++  });
++
++  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Core.gs'), 'utf8'), context);
++  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
++  return { context, sheets };
++}
++
++function post(backend, action, payload) {
++  const output = backend.context.doPost({ postData: { contents: JSON.stringify({ action, payload }) } });
++  return JSON.parse(output.text);
++}
++
++function today_(backend) {
++  return backend.context.manilaDateKey_(new Date());
++}
++
++test('creates the documented Sheet tabs and headers', () => {
++  const backend = loadBackend();
++  backend.context.ensureSchema_();
++  assert.deepEqual(Array.from(backend.sheets.get('Daily Codes')[0]), ['date', 'in_code', 'out_code', 'created_at', 'created_by']);
++  assert.deepEqual(Array.from(backend.sheets.get('People')[0]), ['device_token', 'name', 'first_seen_at', 'last_seen_at']);
++  assert.deepEqual(Array.from(backend.sheets.get('Attendance')[0]), ['event_id', 'date', 'scanned_at', 'mode', 'name', 'device_token', 'qr_created_at']);
++});
++
++test('generates daily codes and invalidates the previous pair', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const first = backend.context.generateDailyCodes_(date);
++  const second = backend.context.generateDailyCodes_(date);
++  assert.notEqual(first.in_code, second.in_code);
++  assert.equal(post(backend, 'scan.status', { date, mode: 'IN', code: first.in_code, device_token: 'device-a' }).error, 'INVALID_CODE');
++  assert.equal(post(backend, 'scan.status', { date, mode: 'OUT', code: second.out_code, device_token: 'device-a' }).ok, true);
++  assert.equal(backend.sheets.get('Daily Codes').length, 2);
++});
++
++test('registers a device once and records every valid scan', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.generateDailyCodes_(date);
++  const first = post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code,
++    device_token: 'device-a', name: '  Ana   Cruz '
++  });
++  assert.equal(first.ok, true);
++  assert.equal(first.event.name, 'Ana Cruz');
++  const status = post(backend, 'scan.status', {
++    date, mode: 'OUT', code: generated.out_code, device_token: 'device-a'
++  });
++  assert.equal(status.name, 'Ana Cruz');
++  const second = post(backend, 'scan.record', {
++    date, mode: 'OUT', code: generated.out_code, device_token: 'device-a'
++  });
++  const third = post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code, device_token: 'device-a'
++  });
++  assert.equal(second.ok, true);
++  assert.equal(third.ok, true);
++  assert.equal(backend.sheets.get('People').length, 2);
++  assert.equal(backend.sheets.get('Attendance').length, 4);
++});
++
++test('rejects invalid codes without writing attendance', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  backend.context.generateDailyCodes_(date);
++  const result = post(backend, 'scan.record', {
++    date, mode: 'IN', code: 'wrong', device_token: 'device-a', name: 'Ana Cruz'
++  });
++  assert.equal(result.ok, false);
++  assert.equal(backend.sheets.get('Attendance').length, 1);
++});
++
++test('filters attendance and exports CSV', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.generateDailyCodes_(date);
++  post(backend, 'scan.record', { date, mode: 'IN', code: generated.in_code, device_token: 'device-a', name: 'Ana Cruz' });
++  const listed = backend.context.listAttendance_(date, 'ana');
++  assert.equal(listed.rows.length, 1);
++  assert.equal(listed.totals.in, 1);
++  const exported = backend.context.exportAttendanceCsv_(date);
++  assert.equal(exported.ok, true);
++  assert.match(exported.csv, /"Ana Cruz"/);
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/client-admin.test.cjs ./tests/client-admin.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/client-admin.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/client-admin.test.cjs	2026-11-24 14:52:50.886640000 +0800
+@@ -0,0 +1,203 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++
++const client = fs.readFileSync(path.join(__dirname, '..', 'Client.html'), 'utf8');
++const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++
++function deferred() {
++  let resolve;
++  let reject;
++  const promise = new Promise((resolvePromise, rejectPromise) => {
++    resolve = resolvePromise;
++    reject = rejectPromise;
++  });
++  return { promise, resolve, reject };
++}
++
++function attendanceResult(date, name, scans) {
++  return {
++    ok: true,
++    totals: { scans, people: 1, in: scans, out: 0 },
++    rows: [{ scanned_at: '08:00', name, mode: 'IN' }]
++  };
++}
++
++function flush() {
++  return new Promise(resolve => setImmediate(resolve));
++}
++
++async function renderedAdmin(api) {
++  const elements = new Map();
++
++  class FakeElement {
++    constructor(id) {
++      this.id = id;
++      this.innerHTML = '';
++      this.textContent = '';
++      this.value = '';
++      this.hidden = false;
++      this.disabled = false;
++      this.listeners = new Map();
++    }
++
++    addEventListener(type, listener) {
++      this.listeners.set(type, listener);
++    }
++
++    dispatch(type) {
++      const listener = this.listeners.get(type);
++      if (listener) listener({ preventDefault() {} });
++    }
++
++    click() {}
++    remove() {}
++  }
++
++  for (const id of [
++    'app',
++    'admin-date',
++    'generate-codes',
++    'admin-error',
++    'qr-pair',
++    'attendance-search',
++    'attendance-totals',
++    'attendance-body',
++    'export-csv'
++  ]) {
++    elements.set(id, new FakeElement(id));
++  }
++  elements.get('admin-date').value = '2026-11-24';
++  elements.get('admin-error').hidden = true;
++  elements.get('qr-pair').hidden = true;
++
++  const document = {
++    getElementById(id) {
++      if (!elements.has(id)) elements.set(id, new FakeElement(id));
++      return elements.get(id);
++    },
++    addEventListener() {},
++    createElement() { return new FakeElement(); },
++    body: { appendChild() {} }
++  };
++  const context = vm.createContext({
++    console,
++    document,
++    window: {
++      qrcode() {
++        return {
++          addData(value) { this.value = value; },
++          make() {},
++          createDataURL() { return `data:image/png;base64,${this.value}`; }
++        };
++      }
++    },
++    confirm: () => true,
++    location: { search: '?page=admin' },
++    URLSearchParams,
++    Blob,
++    URL: { createObjectURL: () => 'blob:attendance', revokeObjectURL() {} },
++    setTimeout: callback => callback()
++  });
++  vm.runInContext(script, context, { filename: 'Client.html' });
++  context.api = api;
++  await context.renderAdminPage_();
++  return { context, elements };
++}
++
++test('a late generation response cannot redisplay QR cards for a previous date', async () => {
++  const generation = deferred();
++  const changedDateList = deferred();
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  context.api = action => action === 'admin.generate' ? generation.promise : changedDateList.promise;
++
++  const pendingGeneration = context.generateCodes_('2026-11-24');
++  elements.get('admin-date').value = '2026-11-25';
++  elements.get('admin-date').dispatch('change');
++  changedDateList.resolve(attendanceResult('2026-11-25', 'New date', 2));
++  await flush();
++
++  generation.resolve({
++    ok: true,
++    record: {
++      date: '2026-11-24',
++      created_at: '2026-11-24 07:00',
++      in_url: 'https://script.test/exec?page=scan&date=2026-11-24&mode=IN&code=old-in',
++      out_url: 'https://script.test/exec?page=scan&date=2026-11-24&mode=OUT&code=old-out'
++    }
++  });
++  await pendingGeneration;
++
++  assert.equal(elements.get('qr-pair').hidden, true);
++  assert.doesNotMatch(elements.get('qr-pair').innerHTML, /2026-11-24|old-in|old-out/);
++  assert.match(elements.get('attendance-body').innerHTML, /New date/);
++  assert.doesNotMatch(elements.get('attendance-body').innerHTML, /Initial/);
++});
++
++test('an older attendance response cannot overwrite a newer search result', async () => {
++  const requests = [];
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  context.api = () => {
++    const request = deferred();
++    requests.push(request);
++    return request.promise;
++  };
++
++  const olderRequest = context.loadAttendance_('2026-11-24', 'Ada');
++  elements.get('attendance-search').value = 'Luis';
++  elements.get('attendance-search').dispatch('input');
++  requests[1].resolve(attendanceResult('2026-11-24', 'Luis', 3));
++  await flush();
++  requests[0].resolve(attendanceResult('2026-11-24', 'Ada', 1));
++  await olderRequest;
++
++  assert.match(elements.get('attendance-body').innerHTML, /Luis/);
++  assert.doesNotMatch(elements.get('attendance-body').innerHTML, /Ada/);
++  assert.match(elements.get('attendance-totals').innerHTML, /<strong>3<\/strong>/);
++});
++
++test('an older attendance failure cannot resurface an error after a newer search succeeds', async () => {
++  const requests = [];
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  context.api = () => {
++    const request = deferred();
++    requests.push(request);
++    return request.promise;
++  };
++
++  elements.get('attendance-search').value = 'Ada';
++  elements.get('attendance-search').dispatch('input');
++  elements.get('attendance-search').value = 'Luis';
++  elements.get('attendance-search').dispatch('input');
++  requests[1].resolve(attendanceResult('2026-11-24', 'Luis', 1));
++  await flush();
++  requests[0].reject(new Error('SHEET_BUSY'));
++  await flush();
++
++  assert.equal(elements.get('admin-error').hidden, true);
++  assert.match(elements.get('attendance-body').innerHTML, /Luis/);
++});
++
++test('starting list and export requests hides a recovered office error', async () => {
++  const listRequest = deferred();
++  const exportRequest = deferred();
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++
++  elements.get('admin-error').textContent = 'Previous failure';
++  elements.get('admin-error').hidden = false;
++  context.api = () => listRequest.promise;
++  const pendingList = context.loadAttendance_('2026-11-24', '');
++  assert.equal(elements.get('admin-error').hidden, true);
++  listRequest.resolve(attendanceResult('2026-11-24', 'Recovered', 1));
++  await pendingList;
++
++  elements.get('admin-error').textContent = 'Previous failure';
++  elements.get('admin-error').hidden = false;
++  context.api = () => exportRequest.promise;
++  const pendingExport = context.downloadCsv_('2026-11-24');
++  assert.equal(elements.get('admin-error').hidden, true);
++  exportRequest.resolve({ ok: true, csv: 'Time,Name\n', filename: 'attendance-2026-11-24.csv' });
++  await pendingExport;
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/client-static.test.cjs ./tests/client-static.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/client-static.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/client-static.test.cjs	2026-11-24 13:58:52.277066700 +0800
+@@ -0,0 +1,36 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++
++const root = path.join(__dirname, '..');
++const client = fs.readFileSync(path.join(root, 'Client.html'), 'utf8');
++const index = fs.readFileSync(path.join(root, 'Index.html'), 'utf8');
++
++test('client script parses as JavaScript', () => {
++  const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++  assert.doesNotThrow(() => new Function(script));
++});
++
++test('landing and student navigation contain no admin link', () => {
++  assert.doesNotMatch(client, /href=["'][^"']*page=admin/);
++  assert.doesNotMatch(client, /location\.href\s*=\s*[^;]*page=admin/);
++});
++
++test('index includes every client asset exactly once', () => {
++  for (const asset of ['Styles', 'QRCodeLib', 'Client']) {
++    assert.equal(index.split(`include('${asset}')`).length - 1, 1);
++  }
++});
++
++test('Apps Script adapter maps every API action to a public server function', () => {
++  for (const mapping of [
++    "'scan.status': 'scanStatus'",
++    "'scan.record': 'scanRecord'",
++    "'admin.generate': 'adminGenerate'",
++    "'admin.list': 'adminList'",
++    "'admin.export': 'adminExport'"
++  ]) {
++    assert.ok(client.includes(mapping), mapping);
++  }
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/core.test.cjs ./tests/core.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/core.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/core.test.cjs	2026-11-24 13:39:33.834090900 +0800
+@@ -0,0 +1,65 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++
++const source = fs.readFileSync(path.join(__dirname, '..', 'Core.gs'), 'utf8');
++const context = vm.createContext({ console });
++vm.runInContext(source, context, { filename: 'Core.gs' });
++
++const api = (name, ...args) => context[name](...args);
++
++test('normalizes a registered name and rejects blank names', () => {
++  assert.equal(api('normalizeName_', '  Maria   Clara  '), 'Maria Clara');
++  assert.throws(() => api('normalizeName_', '   '), /NAME_REQUIRED/);
++  assert.throws(() => api('normalizeName_', 'x'.repeat(81)), /NAME_TOO_LONG/);
++});
++
++test('uses the Manila calendar date across UTC midnight', () => {
++  const date = new Date('2026-11-23T16:30:00.000Z');
++  assert.equal(api('manilaDateKey_', date), '2026-11-24');
++  assert.equal(api('manilaTimestamp_', date), '2026-11-24T00:30:00+08:00');
++});
++
++test('rejects impossible calendar dates', () => {
++  assert.throws(() => api('createDailyCodeRecord_', '2026-02-30', new Date(), () => 'token-a'), /INVALID_DATE/);
++  assert.throws(() => api('createDailyCodeRecord_', '2026-13-01', new Date(), () => 'token-a'), /INVALID_DATE/);
++});
++
++test('creates distinct IN and OUT tokens and a creation timestamp', () => {
++  const tokens = ['in-token', 'out-token'];
++  const record = api('createDailyCodeRecord_', '2026-11-24', new Date('2026-11-24T01:00:00Z'), () => tokens.shift());
++  assert.deepEqual(JSON.parse(JSON.stringify(record)), {
++    date: '2026-11-24',
++    in_code: 'in-token',
++    out_code: 'out-token',
++    created_at: '2026-11-24T09:00:00+08:00',
++    created_by: 'SSLG Office'
++  });
++});
++
++test('validates matching code, mode, and current Manila date', () => {
++  const record = {
++    date: '2026-11-24',
++    in_code: 'in-token',
++    out_code: 'out-token',
++    created_at: '2026-11-24T00:00:00+08:00'
++  };
++  const now = new Date('2026-11-24T02:00:00Z');
++  assert.deepEqual(JSON.parse(JSON.stringify(api('validateScan_', { date: '2026-11-24', mode: 'IN', code: 'in-token' }, record, now))), {
++    ok: true,
++    date: '2026-11-24',
++    mode: 'IN',
++    qr_created_at: '2026-11-24T00:00:00+08:00'
++  });
++  assert.equal(api('validateScan_', { date: '2026-11-24', mode: 'IN', code: 'old-token' }, record, now).error, 'INVALID_CODE');
++  assert.equal(api('validateScan_', { date: '2026-11-24', mode: 'OUT', code: 'in-token' }, record, now).error, 'MODE_MISMATCH');
++  assert.equal(api('validateScan_', { date: '2026-11-24', mode: 'IN', code: 'in-token' }, record, new Date('2026-11-25T02:00:00Z')).error, 'CODE_EXPIRED');
++});
++
++test('escapes CSV commas, quotes, and newlines', () => {
++  assert.equal(api('csvEscape_', 'Dela Cruz, "Ana"'), '"Dela Cruz, ""Ana"""');
++  assert.equal(api('csvEscape_', 'Line one\nLine two'), '"Line one\nLine two"');
++  assert.equal(api('toCsv_', ['name', 'mode'], [['Ana', 'IN']]), '"name","mode"\n"Ana","IN"');
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/packaging.test.cjs ./tests/packaging.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/packaging.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/packaging.test.cjs	2026-11-24 16:36:59.300165800 +0800
+@@ -0,0 +1,28 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++
++const root = path.join(__dirname, '..');
++
++test('manifest uses Manila time and anonymous access', () => {
++  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'appsscript.json'), 'utf8'));
++  assert.equal(manifest.timeZone, 'Asia/Manila');
++  assert.equal(manifest.runtimeVersion, 'V8');
++  assert.equal(manifest.webapp.executeAs, 'USER_DEPLOYING');
++  assert.equal(manifest.webapp.access, 'ANYONE_ANONYMOUS');
++});
++
++test('required Apps Script files exist', () => {
++  for (const file of ['Core.gs', 'Code.gs', 'Index.html', 'Styles.html', 'Client.html', 'QRCodeLib.html', 'appsscript.json', 'SETUP.md']) {
++    assert.equal(fs.existsSync(path.join(root, file)), true, file);
++  }
++});
++
++test('project contains no hard-coded spreadsheet ID or secret assignment', () => {
++  for (const file of ['Core.gs', 'Code.gs', 'Client.html', 'preview/server.cjs']) {
++    const text = fs.readFileSync(path.join(root, file), 'utf8');
++    assert.doesNotMatch(text, /SPREADSHEET_ID\s*=\s*['"][^'"]+/);
++    assert.doesNotMatch(text, /API_KEY\s*=|PRIVATE_KEY\s*=|client_secret/i);
++  }
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/preview.test.cjs ./tests/preview.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/preview.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/preview.test.cjs	2026-11-24 15:53:41.080991200 +0800
+@@ -0,0 +1,180 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { createPreviewServer } = require('../preview/server.cjs');
++
++async function withServer(run) {
++  const server = createPreviewServer();
++  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
++  const base = `http://127.0.0.1:${server.address().port}`;
++  try { await run(base); } finally {
++    const closed = new Promise(resolve => server.close(resolve));
++    server.closeAllConnections();
++    await closed;
++  }
++}
++
++async function post(base, action, payload) {
++  const response = await fetch(`${base}/api/${action}`, {
++    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
++  });
++  return response.json();
++}
++
++async function generateForToday(base) {
++  const date = new Intl.DateTimeFormat('en-CA', {
++    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++  }).format(new Date());
++  const generated = await post(base, 'admin.generate', { date });
++  assert.equal(generated.ok, true);
++  return { date, record: generated.record };
++}
++
++test('renders all include files without scriptlet placeholders', async () => {
++  await withServer(async base => {
++    const html = await (await fetch(base)).text();
++    assert.match(html, /<style>/);
++    assert.match(html, /function renderAdminPage_/);
++    assert.doesNotMatch(html, /include\(/);
++  });
++});
++
++test('preview supports registration, recognition, and repeated scans', async () => {
++  await withServer(async base => {
++    const date = new Intl.DateTimeFormat('en-CA', {
++      timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++    }).format(new Date());
++    const generated = await post(base, 'admin.generate', { date });
++    assert.equal(generated.ok, true);
++    const first = await post(base, 'scan.record', {
++      date, mode: 'IN', code: generated.record.in_code,
++      device_token: 'preview-device', name: 'Ana Cruz'
++    });
++    assert.equal(first.ok, true);
++    const status = await post(base, 'scan.status', {
++      date, mode: 'OUT', code: generated.record.out_code,
++      device_token: 'preview-device'
++    });
++    assert.equal(status.name, 'Ana Cruz');
++    const second = await post(base, 'scan.record', {
++      date, mode: 'OUT', code: generated.record.out_code,
++      device_token: 'preview-device'
++    });
++    assert.equal(second.ok, true);
++    const list = await post(base, 'admin.list', { date, query: '' });
++    assert.equal(list.totals.scans, 2);
++  });
++});
++
++test('preview exports recorded attendance as CSV', async () => {
++  await withServer(async base => {
++    const date = new Intl.DateTimeFormat('en-CA', {
++      timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++    }).format(new Date());
++    const generated = await post(base, 'admin.generate', { date });
++    await post(base, 'scan.record', {
++      date, mode: 'IN', code: generated.record.in_code,
++      device_token: 'export-device', name: 'Ana Cruz'
++    });
++    const exported = await post(base, 'admin.export', { date });
++    assert.equal(exported.ok, true);
++    assert.equal(exported.filename, `SSLG-attendance-${date}.csv`);
++    assert.match(exported.csv, /^"event_id","date","scanned_at","mode","name","device_token","qr_created_at"\n/);
++    assert.match(exported.csv, /"Ana Cruz"/);
++  });
++});
++
++test('preview returns a JSON error for malformed request bodies', async () => {
++  await withServer(async base => {
++    const response = await fetch(`${base}/api/admin.list`, {
++      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"date":',
++      signal: AbortSignal.timeout(2000)
++    });
++    assert.equal(response.status, 200);
++    assert.match(response.headers.get('content-type'), /^application\/json/);
++    const result = await response.json();
++    assert.equal(result.ok, false);
++    assert.equal(typeof result.error, 'string');
++    assert.ok(result.error.length > 0);
++    assert.deepEqual(await post(base, 'admin.list', {}), {
++      ok: true, rows: [], totals: { scans: 0, people: 0, in: 0, out: 0 }
++    });
++  });
++});
++
++test('preview scan handlers reject missing device tokens without writing attendance', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    const payload = { date, mode: 'IN', code: record.in_code, name: 'Ana Cruz' };
++    const results = [];
++    for (const action of ['scan.status', 'scan.record']) {
++      results.push(await post(base, action, payload));
++    }
++    assert.deepEqual(results, [
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' },
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' }
++    ]);
++    const list = await post(base, 'admin.list', { date });
++    assert.equal(list.totals.scans, 0);
++    assert.equal(list.totals.people, 0);
++  });
++});
++
++test('preview scan handlers reject 101-character device tokens without writing attendance', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    const payload = {
++      date, mode: 'IN', code: record.in_code,
++      device_token: 'x'.repeat(101), name: 'Ana Cruz'
++    };
++    const results = [];
++    for (const action of ['scan.status', 'scan.record']) {
++      results.push(await post(base, action, payload));
++    }
++    assert.deepEqual(results, [
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' },
++      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' }
++    ]);
++    const list = await post(base, 'admin.list', { date });
++    assert.equal(list.totals.scans, 0);
++    assert.equal(list.totals.people, 0);
++  });
++});
++
++test('preview accepts 100-character device tokens and returns validated scan status fields', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    const deviceToken = 'x'.repeat(100);
++    const recorded = await post(base, 'scan.record', {
++      date, mode: 'in', code: record.in_code, device_token: deviceToken, name: 'Ana Cruz'
++    });
++    assert.equal(recorded.ok, true);
++    const status = await post(base, 'scan.status', {
++      date, mode: 'out', code: record.out_code, device_token: deviceToken
++    });
++    assert.deepEqual(status, {
++      ok: true, date, mode: 'OUT', name: 'Ana Cruz',
++      device_token: deviceToken, qr_created_at: record.created_at
++    });
++  });
++});
++
++test('preview search trims and stringifies queries like the backend', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    for (const [device_token, name] of [
++      ['search-device-1', 'Ana Cruz'],
++      ['search-device-2', 'Agent 42']
++    ]) {
++      const recorded = await post(base, 'scan.record', {
++        date, mode: 'IN', code: record.in_code, device_token, name
++      });
++      assert.equal(recorded.ok, true);
++    }
++    const whitespace = await post(base, 'admin.list', { date, query: '  ANA  ' });
++    const nonString = await post(base, 'admin.list', { date, query: 42 });
++    assert.deepEqual({
++      whitespace: (whitespace.rows || []).map(row => row.name),
++      nonString: (nonString.rows || []).map(row => row.name)
++    }, { whitespace: ['Ana Cruz'], nonString: ['Agent 42'] });
++  });
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/qr.test.cjs ./tests/qr.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-1/tests/qr.test.cjs	1970-01-01 08:00:00.000000000 +0800
++++ ./tests/qr.test.cjs	2026-11-24 14:15:59.519092500 +0800
+@@ -0,0 +1,31 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++const jsQR = require('jsqr');
++const { PNG } = require('pngjs');
++
++const source = fs.readFileSync(path.join(__dirname, '..', 'QRCodeLib.html'), 'utf8');
++const context = vm.createContext({});
++vm.runInContext(source, context, { filename: 'QRCodeLib.html' });
++
++function decodeQr(value) {
++  const qr = context.qrcode(0, 'M');
++  qr.addData(value);
++  qr.make();
++  const dataUrl = qr.createDataURL(8, 4);
++  const png = PNG.sync.read(Buffer.from(dataUrl.split(',')[1], 'base64'));
++  const decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
++  return decoded && decoded.data;
++}
++
++test('IN QR payload decodes exactly', () => {
++  const value = 'https://script.test/exec?page=scan&date=2026-11-24&mode=IN&code=in-token';
++  assert.equal(decodeQr(value), value);
++});
++
++test('OUT QR payload decodes exactly', () => {
++  const value = 'https://script.test/exec?page=scan&date=2026-11-24&mode=OUT&code=out-token';
++  assert.equal(decodeQr(value), value);
++});

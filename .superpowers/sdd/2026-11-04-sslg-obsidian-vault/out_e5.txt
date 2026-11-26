@@ -1,0 +1,95 @@
+E5a. record_id evidence: stated record_id present in the record's own sources?
+   records where record_id is NOT found in its own sources: 30 / 36
+     ('acr-sslg-2026-001', 'ACR_SSLG_2026_001', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Brigada Eskwela 2026/Sources/ACR_SSLG_2026_001.docx'])
+     ('acr-sslg-2026-002', 'ACR_SSLG_2026_002', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/SSLG Grade 7 Representative Elections 2026/Sources/ACR_SSLG_2026_002.docx'])
+     ('acr-sslg-2026-003', 'ACR_SSLG_2026_003', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Club Fair 2026/Sources/ACR_SSLG_2026_003.docx'])
+     ('acr-sslg-2026-004', 'ACR_SSLG_2026_004', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Election of Registered School Clubs and Organizations 2026/Sources/ACR_SSLG_2026_004.docx'])
+     ('acr-sslg-2026-005', 'ACR_SSLG_2026_005', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Crafting of the SSLG General Plan of Action 2026/Sources/ACR_SSLG_2026_005.docx'])
+     ('acr-sslg-2026-006', 'ACR_SSLG_2026_006', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Onto the Next - Leaders Induction 2026/Sources/ACR_SSLG_2026_006.docx'])
+     ('ap-sslg-2026-001', 'AP_SSLG_2026_001', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Onto the Next - Leaders Induction 2026/Sources/AP_SSLG_2026_001.docx'])
+     ('ap-sslg-2026-002', 'AP_SSLG_2026_002', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Project ECOLEAD/Sources/AP_SSLG_2026_002.docx'])
+     ('ap-sslg-2026-003', 'AP_SSLG_2026_003', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Project TINIG/Sources/AP_SSLG_2026_003.docx'])
+     ('ap-sslg-2026-004', 'AP_SSLG_2026_004', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Project LIWANAG/Sources/AP_SSLG_2026_004.docx'])
+     ('ap-sslg-2026-005', 'AP_SSLG_2026_005', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Foundation Day 2026/Sources/AP_SSLG_2026_005 (2).docx'])
+     ('ap-sslg-2026-006', 'AP_SSLG_2026_006', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/World Teachers Day 2026/Sources/AP_SSLG_2026_006_revised.docx'])
+     ('ap-sslg-2026-007', 'AP_SSLG_2026_007', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/National Students Day 2026/Sources/AP_SSLG_2026_007_AnnexD_proofread.docx', '02 Activities/National Students Day 2026/Sources/AP_SSLG_2026_007_AnnexD.pdf'])
+     ('el-sslg-2026-004', 'EL_SSLG_2026_004', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/SSLG Grade 7 Representative Elections 2026/Sources/EL_SSLG_2026_004.docx'])
+     ('el-sslg-2026-005-drill', 'EL_SSLG_2026_005', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Earthquake Drill 2026/Sources/EL_SSLG_2026_005.docx'])
+     ('el-sslg-2026-005-elections', 'EL_SSLG_2026_005', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/SSLG Grade 7 Representative Elections 2026/Sources/EL_SSLG_2026_005 (1).docx'])
+     ('el-sslg-2026-010', 'EL_SSLG_2026_010', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Municipal Short Film Festival 2026/Sources/EL_SSLG_2026_010.docx'])
+     ('nom-0516-sslg-nom', None, 'record_id null', ['02 Activities/Cluster IV SSLG Federation Leadership Training Camp/Sources/05-16-26-SSLG-Notice-of-Meeting.docx'])
+     ('nom-sslg-2026-001', 'NOM_SSLG_2026_001', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Cluster IV SSLG Federation Leadership Training Camp/Sources/NOM_SSLG_2026_001.docx'])
+     ('nom-sslg-2026-003-jun06', 'NOM_SSLG_2026_003', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Crafting of the SSLG General Plan of Action 2026/Sources/NOM_SSLG_2026_003.docx'])
+     ('nom-sslg-2026-003-may29', 'NOM_SSLG_2026_003', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Brigada Eskwela 2026/Sources/NOM_SSLG_2026_003 (1).docx'])
+     ('nom-sslg-2026-004', 'NOM_SSLG_2026_004', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Crafting of the SSLG General Plan of Action 2026/Sources/NOM_SSLG_2026_004.docx', '02 Activities/Crafting of the SSLG General Plan of Action 2026/Sources/NOM_SSLG_2026_004.pdf'])
+     ('om-nfsslg-2026-001', 'OM-NFSSLG-2026-001', 'NOT-VERBATIM', ['04 External Memoranda/Sources/Memorandum-OM-NFSSLG-2026-001_signed-2.pdf'])
+     ('om-sslg-2026-001-may25', 'OM SSLG No. 001, s. 2026', 'NUMERIC-FRAGMENT-ONLY', ['03 Governance/Sources/OM_SSLG_2026_001.docx', '03 Governance/Sources/OM_SSLG_2026_001.pdf'])
+     ('om-sslg-2026-001-may27', 'OM SSLG No. 001, s. 2026', 'NUMERIC-FRAGMENT-ONLY', ['03 Governance/Sources/OM_SSLG_2026_001 (8).docx', '03 Governance/Sources/OM_SSLG_2026_001.docx.pdf'])
+     ('om-sslg-2026-002-ecolead', 'OM SSLG No. 002, s. 2026', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Project ECOLEAD/Sources/OM_SSLG_2026_002.docx'])
+     ('om-sslg-2026-002-survey-aug27', 'OM SSLG No. 002, s. 2026', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Nationwide Online Survey on Digital Device Use/Sources/OM_SSLG_2026_002 (3).docx', '02 Activities/Nationwide Online Survey on Digital Device Use/Sources/OM_SSLG_2026_002.docx.pdf'])
+     ('om-sslg-2026-002-survey-aug28', 'OM SSLG No. 002, s. 2026', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Nationwide Online Survey on Digital Device Use/Sources/OM_SSLG_2026_002 (6).docx', '02 Activities/Nationwide Online Survey on Digital Device Use/Sources/OM_SSLG_2026_002.pdf'])
+     ('om-sslg-2026-003-ecolead', 'OM SSLG No. 003, s. 2026', 'NUMERIC-FRAGMENT-ONLY', ['02 Activities/Project ECOLEAD/Sources/OM_SSLG_2026_002 (7).docx'])
+     ('request-mph-jun25', None, 'record_id null', ['02 Activities/SSLG Grade 7 Representative Elections 2026/Sources/REQUEST_FOR_MPH.docx'])
+
+E5b. signature markers in OM_SSLG_2026_001 DOCX/PDFs
+   OM_SSLG_2026_001.docx        role=primary            markers=['approved by']
+      tail=['BENIGNO S. AQUINO NATIONAL HIGH SCHOOL', 'Learner Government Coordinating Council (LGCC)', 'School Year 2026-2027']
+   OM_SSLG_2026_001.pdf         role=alternative-format markers=['approved by']
+      tail=['This Memorandum shall take effect immediately upon issuance and shall remain in force for S.Y. 2026�2027 unless otherwise amended or revoked.', 'Address: A. Bonifacio St. San Nicolas Poblacion, Concepcion, Tarlac Telephone No.: (045) 923-0303 Email Address: 300951@deped.gov.ph', '"Disiplina at Galing Ing Armas Ku, Aquinian Ku, Pagmaragul Ku!"']
+   OM_SSLG_2026_001 (8).docx    role=primary            markers=['concurred', 'prepared by', 'reviewed and']
+      tail=['BENIGNO S. AQUINO NATIONAL HIGH SCHOOL', 'Learner Government Coordinating Council (LGCC)', 'School Year 2026-2027']
+   OM_SSLG_2026_001.docx.pdf    role=alternative-format markers=['concurred', 'prepared by', 'reviewed and']
+      tail=['AARON KHRISTIAN T. BANAG SSLG Adviser', 'Concurred:', 'AMPARO M. MU�OZ, EDD Principal IV']
+
+E5c. image-only PDFs and disclosure
+   image-only PDFs: 2 ['90 Archive/Revisions/Memorandum-OM-NFSSLG-2026-001_signed-2-pages-deleted-compressed.pdf', '04 External Memoranda/Sources/Memorandum-OM-NFSSLG-2026-001_signed-2.pdf']
+      om-nfsslg-2026-001 | primary is image-only | discloses: True
+
+E5d. hub organizer lines
+   brigada-eskwela-2026               manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   club-fair-2026                     manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   grade7-representative-election-2026 manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   club-officers-election-2026        manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: title: "Election of Registered School Clubs and Organizations 2026"
+   gpoa-crafting-2026                 manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   leaders-induction-2026             manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   project-ecolead-2026               manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   project-tinig-2026                 manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   project-liwanag-2026               manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   foundation-day-2026                manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   world-teachers-day-2026            manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   national-students-day-2026         manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   cluster-iv-training-camp-2026      manifest="['Cluster IV SSLG Federation']"
+      hub line: > **Organizers:** Cluster IV SSLG Federation
+   short-film-festival-2026           manifest="['Local Government Unit of Concepcion Social Welfare office'"
+      hub line: > **Organizers:** Local Government Unit of Concepcion Social Welfare office
+   earthquake-drill-2026              manifest="['Supreme Secondary Learner Government (SSLG) and Learner Go"
+      hub line: > **Organizers:** Supreme Secondary Learner Government (SSLG) and Learner Government Coordinating Council (LGC
+   digital-device-survey-2026         manifest="['National Federation of SSLG, relayed by the Division SSLG "
+      hub line: > **Organizers:** National Federation of SSLG, relayed by the Division SSLG Federation, Cluster IV Federation 
+
+E5e. hub body carries venue/start/status
+
+E5f. record note At-a-glance dates vs manifest
+   mismatches: 0 []
+
+E5g. record note Document ID line vs manifest record_id
+   mismatches: 0 []
+
+E5h. stated issuance dates vs DATE lines in the primary source (all records with a date)
+   dates not matched by a DATE-style pattern in the primary source: 4
+      ('nom-sslg-2026-003-jun06', '2026-06-06', '02 Activities/Crafting of the SSLG General Plan of Action 2026/Sources/NOM_SSLG_2026_003.docx')
+      ('nom-sslg-2026-004', '2026-07-02', '02 Activities/Crafting of the SSLG General Plan of Action 2026/Sources/NOM_SSLG_2026_004.docx')
+      ('om-nfsslg-2026-001', '2026-08-25', '04 External Memoranda/Sources/Memorandum-OM-NFSSLG-2026-001_signed-2.pdf')
+      ('om-sslg-2026-003-ecolead', '2026-08-03', '02 Activities/Project ECOLEAD/Sources/OM_SSLG_2026_002 (7).docx')

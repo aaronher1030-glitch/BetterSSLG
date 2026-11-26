@@ -1,0 +1,58 @@
+E2a. measured page counts (object-scan, formfeed) for all 20 PDFs
+   NOM_SSLG_2026_004.pdf: (1, 0)
+   AP_SSLG_2026_007_AnnexD.pdf: (14, 13)
+   OM_SSLG_2026_002.docx.pdf: (1, 0)
+   OM_SSLG_2026_002.pdf: (18, 17)
+   OM_SSLG_2026_001.docx.pdf: (9, 8)
+   OM_SSLG_2026_001.pdf: (8, 7)
+   Memorandum-OM-NFSSLG-2026-001_signed-2.pdf: (16, 15)
+   OM-DFSSLG-2026-003-1.pdf: (2, 1)
+   OM-DFSSLG-2026-007-1.pdf: (6, 5)
+   OM-DFSSLG-2026-010.pdf: (17, 16)
+   OM-DFSSLG-2026-010 (1).pdf: (17, 16)
+   OM_SSLG_2026_002 (1).pdf: (18, 17)
+   Memorandum-OM-NFSSLG-2026-001_signed-2-merged.pdf: (17, 16)
+   Memorandum-OM-NFSSLG-2026-001_signed-2-pages-deleted-compressed.pdf: (0, 1)
+   OM_SSLG_2026_001 (14).docx.pdf: (9, 8)
+   OM_SSLG_2026_001.docx (1).pdf: (9, 8)
+   OM_SSLG_2026_002..docx.pdf: (2, 1)
+   OM_SSLG_2026_002.POST.docx-merged.pdf: (17, 16)
+   OM_SSLG_2026_002.POST.docx.pdf: (1, 0)
+
+E2b. every 'N-page' claim in the notes, checked against the files named on the same line
+   [NOFILE] 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (27 May 2026).md:52 nums=[9] :: - Exported as a 9-page PDF.
+   [NOTPDF] 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (27 May 2026).md:68 OM_SSLG_2026_001 (14).docx want 9
+   [NOTPDF] 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (27 May 2026).md:69 OM_SSLG_2026_001.docx want 9
+   [NOFILE] 04 External Memoranda/Division Memorandum OM-DFSSLG-2026-010 - Nationwide Online Survey on Digital Device Use in Schools.md:48 nums=[17] :: - A 17-page export is present together with a byte-identical duplicate.
+   [NOFILE] 04 External Memoranda/National Federation Memorandum OM-NFSSLG-2026-001 - Nationwide Online Survey on Digital Device Use in Schools.md:48 nums=[16, 17, 2] :: - The 16-page signed export is retained as the primary source; a 17-page merged bundle and a 2-page compressed
+   [NOFILE] 02 Activities/Nationwide Online Survey on Digital Device Use/Notes/Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Device Use in Schools (27 August 2026).md:54 nums=[1] :: - A 1-page PDF export of the 27 August text is present.
+   [NOFILE] 02 Activities/Nationwide Online Survey on Digital Device Use/Notes/Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Device Use in Schools (28 August 2026).md:47 nums=[18] :: Re-issued school memorandum for the Nationwide Online Survey on Digital Device Use in Schools dated 28 August 
+   [NOFILE] 02 Activities/Nationwide Online Survey on Digital Device Use/Notes/Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Device Use in Schools (28 August 2026).md:55 nums=[2, 1, 17] :: - A 2-page and a 1-page condensed render, plus a 17-page merged bundle, also carry the 28 August text.
+   [NOTPDF] 02 Activities/Nationwide Online Survey on Digital Device Use/Notes/Memorandum No. 002, s. 2026 - Nationwide Online Survey on Digital Device Use in Schools (28 August 2026).md:68 OM_SSLG_2026_002..docx want 2
+   claims matched=7 mismatched=1
+    MISMATCH: ('04 External Memoranda/National Federation Memorandum OM-NFSSLG-2026-001 - Nationwide Online Survey on Digital Device Use in Schools.md', 60, 'Memorandum-OM-NFSSLG-2026-001_signed-2-pages-deleted-compressed.pdf', 2, (0, 1), '- [[90 Archive/Revisions/Memorandum-OM-NFSSLG-2026-001_signed-2-pages-deleted-compressed.p')
+
+E2c. 'byte-identical duplicate of X' claims verified by hash on disk
+   byte-identical claims found: 17 violations: 0
+
+E2d. recompute duplicate grouping from disk and compare to manifest sha256 fields
+   manifest sha256 fields disagreeing with disk: 0 []
+   disk duplicate groups: 14
+     64bfef0089fb ['05-16-26-SSLG-Notice-of-Meeting (1).docx', '05-16-26-SSLG-Notice-of-Meeting.docx']
+     0eccbbb246e0 ['05-16-26-SSLG-Notice-of-Meeting_VP (1).docx', '05-16-26-SSLG-Notice-of-Meeting_VP.docx']
+     8eeb2fd8b0cb ['AP_SSLG_2026_006_revised (1).docx', 'AP_SSLG_2026_006_revised (2).docx', 'AP_SSLG_2026_006_revised.docx']
+     53c8add2ae94 ['AP_SSLG_2026_007 (1).docx', 'AP_SSLG_2026_007 (2).docx', 'AP_SSLG_2026_007.docx']
+     e87ebf1a362f ['EL_SSLG_2026_010 (1).docx', 'EL_SSLG_2026_010.docx']
+     76c9af4e3f14 ['NOM_SSLG_2026_003 (3).docx', 'NOM_SSLG_2026_003.docx']
+     a0988be92503 ['OM-DFSSLG-2026-003-1.pdf', 'OM-DFSSLG-2026-003-1.pdf']
+     d3513e1351cb ['OM-DFSSLG-2026-010 (1).pdf', 'OM-DFSSLG-2026-010.pdf']
+     c276dafc7ffd ['OM_SSLG_2026_001 (1).docx', 'OM_SSLG_2026_001 (6).docx']
+     e4f8e1db01c4 ['OM_SSLG_2026_001 (10).docx', 'OM_SSLG_2026_001 (13).docx', 'OM_SSLG_2026_001 (3).docx']
+     0c68b93147d4 ['OM_SSLG_2026_001 (4).docx', 'OM_SSLG_2026_001 (7).docx']
+     b34d4d428c24 ['OM_SSLG_2026_001 (12).docx', 'OM_SSLG_2026_001 (14).docx', 'OM_SSLG_2026_001 (8).docx', 'OM_SSLG_2026_001 (9).docx']
+     1de8b97ba990 ['OM_SSLG_2026_002..docx', 'OM_SSLG_2026_002..docx']
+     1c390d3a5d13 ['OM_SSLG_2026_002 (1).pdf', 'OM_SSLG_2026_002.pdf']
+
+E2e. claims of 'text identical' / 'identical text' in archive reasons — verify by extracted text
+   text-identity claims checked: 8 violations: 1
+     ('TEXT-DIFFERS', '90 Archive/Revisions/OM_SSLG_2026_001 (14).docx.pdf', 'OM_SSLG_2026_001.docx', 10759, 9044)

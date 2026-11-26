@@ -1,0 +1,26 @@
+A1. content.json files == File Manifest.json files: True
+    activities equal: True records equal: True protected equal: True
+A2. files entries=104 missing current_path=0 hash mismatch=0
+A3. roles: Counter({'primary': 36, 'revision': 33, 'duplicate': 18, 'asset': 8, 'alternative-format': 6, 'staged': 3})
+A4. baseline: count field = 104 entries = 104 (dict path->sha256)
+A6. baseline paths whose recorded hash no longer exists anywhere in manifest hashes: 0
+A7. baseline original paths == manifest original paths: True
+A8. baseline vs manifest hash disagreements per original path: 0
+A9. loose DOCX/PDF at vault root: 0 []
+A10. hash groups with >1 manifest entry: 14 files in those groups: 33 distinct hashes total: 85
+     duplicate-group members missing on disk: 0 []
+A11. on-disk DOCX/PDF/PNG in vault scope: 104 | manifest entries: 104
+     on-disk but not in manifest: []
+     in manifest but not on disk scan: []
+A12. _DUPLICATES_TO_DELETE: exists=True children=0
+A12. OM_SSLG_2026_001: exists=True children=0
+A12. 05 General Records: exists=False children=-
+A13. entries where current_path != original_path: 104 unchanged: 0
+     stale original paths still present (would mean copy not move): 0 []
+A14. protected_files entries: 87
+     scheduler files on disk: 87 declared: 87
+     on disk but undeclared: []
+     declared but missing: []
+     protected hash drift: 0 []
+A15. docs/ files on disk: 2 ['docs/superpowers/plans/2026-11-04-sslg-obsidian-vault.md', 'docs/superpowers/specs/2026-11-04-sslg-obsidian-vault-design.md']
+A16. tools/ files (excl pycache): 11 ['tools/sslg_content.json', 'tools/sslg_migration.py', 'tools/sslg_navigation.py', 'tools/sslg_notes.py', 'tools/tests/__init__.py', 'tools/tests/test_sslg_content.py', 'tools/tests/test_sslg_migration.py', 'tools/tests/test_sslg_navigation.py', 'tools/tests/test_sslg_notes.py', 'tools/tests/test_validate_sslg_vault.py', 'tools/validate_sslg_vault.py']

@@ -1,0 +1,1172 @@
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/Client.html" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Client.html"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/Client.html"	2026-11-24 23:46:08.655745200 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Client.html"	2026-11-25 07:51:44.523209800 +0800
+@@ -49,10 +49,8 @@
+   DEVICE_TOKEN_REQUIRED: 'This browser could not create a device token. Enable site storage and try again.',
+   DEVICE_TOKEN_INVALID: 'This browser’s saved device token is invalid. Clear site storage and try again.',
+   INVALID_REQUEST: 'This QR link is incomplete or invalid.',
+-  CODE_NOT_FOUND: 'This code is not registered. Ask the SSLG office for today’s code.',
+-  WRONG_DATE: 'This QR code belongs to a different date.',
+-  CODE_EXPIRED: 'This QR code has expired. Ask the SSLG office for today’s code.',
+-  INVALID_CODE: 'This QR code is no longer valid. A newer code may have been generated.',
++  CODE_NOT_FOUND: 'This code is not registered. Ask the SSLG office for the posted permanent codes.',
++  INVALID_CODE: 'This code is not valid for this attendance action. Ask the SSLG office for the posted permanent codes.',
+   MODE_MISMATCH: 'This is not the correct code for this attendance action.',
+   SPREADSHEET_NOT_CONFIGURED: 'The attendance Sheet is not configured yet. Ask the SSLG office to set SPREADSHEET_ID in Apps Script Project Settings → Script Properties.',
+   SHEET_BUSY: 'The office Sheet is busy. Please try again in a moment.',
+@@ -66,7 +64,6 @@
+ 
+ function scanParams_() {
+   return {
+-    date: new URLSearchParams(location.search).get('date'),
+     mode: new URLSearchParams(location.search).get('mode'),
+     code: new URLSearchParams(location.search).get('code')
+   };
+@@ -168,7 +165,7 @@
+     <section class="card scan-card">
+       <p class="eyebrow">SSLG Office</p>
+       <h2>Scan to record attendance</h2>
+-      <p>Use your phone camera to scan today’s check-in or check-out QR code posted by the office.</p>
++      <p>Use your phone camera to scan the permanent check-in or check-out QR codes posted by the office.</p>
+       <p class="helper-text">First time here? You will be asked for your name once. This phone will remember it for later scans.</p>
+     </section>`;
+ }
+@@ -196,12 +193,12 @@
+   app.innerHTML = `
+     <section class="card admin-card">
+       <p class="eyebrow">Office tools</p>
+-      <h2>Daily QR codes</h2>
+-      <p class="helper-text">Generating a new pair invalidates the old pair for this date.</p>
++      <h2>Permanent QR codes</h2>
++      <p class="helper-text">Use the same permanent IN and OUT codes every day. Each scan is dated automatically.</p>
+       <label class="field">Attendance date
+         <input id="admin-date" type="date" value="${defaultAdminDate_()}">
+       </label>
+-      <button id="generate-codes" class="button button-primary">Generate QR pair</button>
++      <button id="generate-codes" class="button button-primary">Show permanent QR pair</button>
+       <p id="admin-error" class="notice notice-error" role="alert" hidden></p>
+       <div id="qr-pair" class="admin-grid" aria-live="polite" hidden></div>
+     </section>
+@@ -218,13 +215,8 @@
+ 
+   const dateInput = document.getElementById('admin-date');
+   const searchInput = document.getElementById('attendance-search');
+-  document.getElementById('generate-codes').addEventListener('click', () => generateCodes_(dateInput.value).catch(showAdminError_));
++  document.getElementById('generate-codes').addEventListener('click', () => generateCodes_().catch(showAdminError_));
+   dateInput.addEventListener('change', () => {
+-    adminGenerateRequest_ += 1;
+-    document.getElementById('generate-codes').disabled = false;
+-    const qrPair = document.getElementById('qr-pair');
+-    qrPair.hidden = true;
+-    qrPair.innerHTML = '';
+     loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_);
+   });
+   searchInput.addEventListener('input', () => loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_));
+@@ -249,25 +241,24 @@
+   errorBox.hidden = false;
+ }
+ 
+-async function generateCodes_(dateKey) {
++async function generateCodes_() {
+   const button = document.getElementById('generate-codes');
+-  if (button.disabled || !confirm('Generate new IN and OUT codes? The previous pair for this date will stop working.')) return;
++  if (button.disabled) return;
+   const request = ++adminGenerateRequest_;
+   clearAdminError_();
+   button.disabled = true;
+   try {
+-    const result = await api('admin.generate', { date: dateKey });
+-    if (request !== adminGenerateRequest_ || document.getElementById('admin-date').value !== dateKey) return;
++    const result = await api('admin.generate', {});
++    if (request !== adminGenerateRequest_) return;
+     if (!result.ok) throw new Error(result.error);
+     const record = result.record;
+-    if (record.date !== dateKey) return;
+     document.getElementById('qr-pair').innerHTML = `
+-      <article class="qr-card qr-in"><p class="eyebrow">Check in</p><img alt="Check-in QR code" src="${qrDataUrl_(record.in_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>
+-      <article class="qr-card qr-out"><p class="eyebrow">Check out</p><img alt="Check-out QR code" src="${qrDataUrl_(record.out_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>`;
++      <article class="qr-card qr-in"><p class="eyebrow">Check in</p><img alt="Check-in QR code" src="${qrDataUrl_(record.in_url)}"><p>Reusable every day</p><small>Created ${escapeHtml_(record.created_at)}</small></article>
++      <article class="qr-card qr-out"><p class="eyebrow">Check out</p><img alt="Check-out QR code" src="${qrDataUrl_(record.out_url)}"><p>Reusable every day</p><small>Created ${escapeHtml_(record.created_at)}</small></article>`;
+     document.getElementById('qr-pair').hidden = false;
+-    await loadAttendance_(dateKey, document.getElementById('attendance-search').value);
++    await loadAttendance_(document.getElementById('admin-date').value, document.getElementById('attendance-search').value);
+   } catch (error) {
+-    if (request === adminGenerateRequest_ && document.getElementById('admin-date').value === dateKey) showAdminError_(error);
++    if (request === adminGenerateRequest_) showAdminError_(error);
+   } finally {
+     if (request === adminGenerateRequest_) button.disabled = false;
+   }
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/Code.gs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Code.gs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/Code.gs"	2026-11-24 23:45:41.633812500 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Code.gs"	2026-11-25 07:48:00.658672900 +0800
+@@ -20,7 +20,7 @@
+ 
+ function ensureSchema_() {
+   const spreadsheet = openSpreadsheet_();
+-  ensureSheet_(spreadsheet, 'Daily Codes', DAILY_CODE_HEADERS);
++  ensureSheet_(spreadsheet, 'QR Codes', QR_CODE_HEADERS);
+   ensureSheet_(spreadsheet, 'People', PEOPLE_HEADERS);
+   ensureSheet_(spreadsheet, 'Attendance', ATTENDANCE_HEADERS);
+ }
+@@ -33,37 +33,31 @@
+   return values.map(row => Object.fromEntries(headers.map((header, index) => [header, row[index]])));
+ }
+ 
+-function getDailyCodeRecord_(dateKey) {
++function getPermanentCodeRecord_() {
+   ensureSchema_();
+-  const rows = sheetRows_(openSpreadsheet_().getSheetByName('Daily Codes'));
+-  return rows.find(row => row.date === dateKey) || null;
++  const rows = sheetRows_(openSpreadsheet_().getSheetByName('QR Codes'));
++  return rows[0] || null;
+ }
+ 
+ function getWebAppUrl_() {
+   return ScriptApp.getService().getUrl();
+ }
+ 
+-function generateDailyCodes_(dateKey) {
++function generatePermanentCodes_() {
+   const lock = LockService.getScriptLock();
+   if (!lock.tryLock(10000)) throw new Error('SHEET_BUSY');
+   try {
+     ensureSchema_();
+     const spreadsheet = openSpreadsheet_();
+-    const sheet = spreadsheet.getSheetByName('Daily Codes');
++    const sheet = spreadsheet.getSheetByName('QR Codes');
+     const rows = sheetRows_(sheet);
+-    const existingIndex = rows.findIndex(row => row.date === dateKey);
+-    const record = createDailyCodeRecord_(dateKey, new Date(), () => Utilities.getUuid());
+-    const values = DAILY_CODE_HEADERS.map(header => record[header]);
+-    if (existingIndex >= 0) {
+-      sheet.getRange(existingIndex + 2, 1, 1, values.length).setValues([values]);
+-    } else {
+-      sheet.appendRow(values);
+-    }
++    const record = rows[0] || createPermanentCodeRecord_(new Date(), () => Utilities.getUuid());
++    if (!rows.length) sheet.appendRow(QR_CODE_HEADERS.map(header => record[header]));
+     const baseUrl = getWebAppUrl_();
+     return {
+       ...record,
+-      in_url: `${baseUrl}?page=scan&date=${encodeURIComponent(dateKey)}&mode=IN&code=${encodeURIComponent(record.in_code)}`,
+-      out_url: `${baseUrl}?page=scan&date=${encodeURIComponent(dateKey)}&mode=OUT&code=${encodeURIComponent(record.out_code)}`
++      in_url: `${baseUrl}?page=scan&mode=IN&code=${encodeURIComponent(record.in_code)}`,
++      out_url: `${baseUrl}?page=scan&mode=OUT&code=${encodeURIComponent(record.out_code)}`
+     };
+   } finally {
+     lock.releaseLock();
+@@ -95,7 +89,7 @@
+ }
+ 
+ function getScanStatus_(params) {
+-  const record = getDailyCodeRecord_(String(params.date || ''));
++  const record = getPermanentCodeRecord_();
+   const validation = validateScan_(params, record, new Date());
+   if (!validation.ok) return validation;
+   const deviceToken = String(params.device_token || '');
+@@ -116,13 +110,13 @@
+   const lock = LockService.getScriptLock();
+   if (!lock.tryLock(10000)) throw new Error('SHEET_BUSY');
+   try {
+-    const record = getDailyCodeRecord_(String(params.date || ''));
+-    const validation = validateScan_(params, record, new Date());
++    const now = new Date();
++    const record = getPermanentCodeRecord_();
++    const validation = validateScan_(params, record, now);
+     if (!validation.ok) return validation;
+     const deviceToken = String(params.device_token || '');
+     const tokenError = deviceTokenError_(deviceToken, true);
+     if (tokenError) return { ok: false, error: tokenError };
+-    const now = new Date();
+     const existing = findPersonByToken_(deviceToken);
+     const name = normalizeName_(existing ? existing.name : params.name);
+     upsertPerson_(deviceToken, name, now);
+@@ -199,7 +193,7 @@
+         result = recordScan_(payload);
+         break;
+       case 'admin.generate':
+-        result = { ok: true, record: generateDailyCodes_(payload.date) };
++        result = { ok: true, record: generatePermanentCodes_() };
+         break;
+       case 'admin.list':
+         result = listAttendance_(payload.date, payload.query);
+@@ -225,7 +219,7 @@
+ }
+ 
+ function adminGenerate(payload) {
+-  return { ok: true, record: generateDailyCodes_((payload || {}).date) };
++  return { ok: true, record: generatePermanentCodes_() };
+ }
+ 
+ function adminList(payload) {
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/Core.gs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Core.gs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/Core.gs"	2026-11-24 23:44:42.921029300 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Core.gs"	2026-11-25 07:44:41.852239900 +0800
+@@ -1,6 +1,6 @@
+ const SSLG_ATTENDANCE_TIME_ZONE = 'Asia/Manila';
+ 
+-const DAILY_CODE_HEADERS = ['date', 'in_code', 'out_code', 'created_at', 'created_by'];
++const QR_CODE_HEADERS = ['in_code', 'out_code', 'created_at', 'created_by'];
+ const PEOPLE_HEADERS = ['device_token', 'name', 'first_seen_at', 'last_seen_at'];
+ const ATTENDANCE_HEADERS = ['event_id', 'date', 'scanned_at', 'mode', 'name', 'device_token', 'qr_created_at'];
+ 
+@@ -46,17 +46,11 @@
+   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+08:00`;
+ }
+ 
+-function createDailyCodeRecord_(dateKey, now, makeToken) {
+-  const normalizedDate = String(dateKey);
+-  const parsedDate = new Date(`${normalizedDate}T00:00:00.000Z`);
+-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== normalizedDate) {
+-    throw new Error('INVALID_DATE');
+-  }
++function createPermanentCodeRecord_(now, makeToken) {
+   const inCode = makeToken();
+   const outCode = makeToken();
+   if (!inCode || !outCode || inCode === outCode) throw new Error('TOKEN_GENERATION_FAILED');
+   return {
+-    date: normalizedDate,
+     in_code: inCode,
+     out_code: outCode,
+     created_at: manilaTimestamp_(now),
+@@ -66,18 +60,13 @@
+ 
+ function validateScan_(params, record, now = new Date()) {
+   if (!params || typeof params !== 'object') return { ok: false, error: 'INVALID_REQUEST' };
+-  const date = String(params.date || '');
+   const mode = String(params.mode || '').toUpperCase();
+   const code = String(params.code || '');
+-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !['IN', 'OUT'].includes(mode) || !code) {
+-    return { ok: false, error: 'INVALID_REQUEST' };
+-  }
++  if (!['IN', 'OUT'].includes(mode) || !code) return { ok: false, error: 'INVALID_REQUEST' };
+   if (!record) return { ok: false, error: 'CODE_NOT_FOUND' };
+-  if (record.date !== date) return { ok: false, error: 'WRONG_DATE' };
+-  if (manilaDateKey_(now) !== date) return { ok: false, error: 'CODE_EXPIRED' };
+   const expected = mode === 'IN' ? record.in_code : record.out_code;
+   if (code !== expected) return { ok: false, error: mode === 'IN' ? 'INVALID_CODE' : 'MODE_MISMATCH' };
+-  return { ok: true, date, mode, qr_created_at: record.created_at };
++  return { ok: true, date: manilaDateKey_(now), mode, qr_created_at: record.created_at };
+ }
+ 
+ function csvEscape_(value) {
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/preview/server.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/preview/server.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/preview/server.cjs"	2026-11-24 23:45:57.586923300 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/preview/server.cjs"	2026-11-25 07:49:10.378625300 +0800
+@@ -22,7 +22,7 @@
+ 
+ function createPreviewServer() {
+   const core = loadCore();
+-  const state = { codes: new Map(), people: new Map(), attendance: [] };
++  const state = { codeRecord: null, people: new Map(), attendance: [] };
+   const baseUrl = process.env.PREVIEW_PUBLIC_URL || 'http://127.0.0.1:4173';
+ 
+   const server = http.createServer(async (request, response) => {
+@@ -41,16 +41,18 @@
+         for await (const chunk of request) raw += chunk;
+         payload = JSON.parse(raw || '{}');
+         if (action === 'admin.generate') {
+-          const record = core.createDailyCodeRecord_(payload.date, new Date(), randomUUID);
+-          state.codes.set(payload.date, {
+-            ...record,
+-            in_url: `${baseUrl}/?page=scan&date=${payload.date}&mode=IN&code=${record.in_code}`,
+-            out_url: `${baseUrl}/?page=scan&date=${payload.date}&mode=OUT&code=${record.out_code}`
+-          });
+-          result = { ok: true, record: state.codes.get(payload.date) };
++          if (!state.codeRecord) {
++            const record = core.createPermanentCodeRecord_(new Date(), randomUUID);
++            state.codeRecord = {
++              ...record,
++              in_url: `${baseUrl}/?page=scan&mode=IN&code=${encodeURIComponent(record.in_code)}`,
++              out_url: `${baseUrl}/?page=scan&mode=OUT&code=${encodeURIComponent(record.out_code)}`
++            };
++          }
++          result = { ok: true, record: state.codeRecord };
+         } else if (action === 'scan.status' || action === 'scan.record') {
+-          const code = state.codes.get(payload.date);
+-          const validation = core.validateScan_(payload, code, new Date());
++          const now = new Date();
++          const validation = core.validateScan_(payload, state.codeRecord, now);
+           if (!validation.ok) result = validation;
+           else {
+             const deviceToken = String(payload.device_token || '');
+@@ -62,10 +64,10 @@
+                 result = { ok: true, date: validation.date, mode: validation.mode, name: person ? person.name : null, device_token: deviceToken, qr_created_at: validation.qr_created_at };
+               } else {
+                 const name = core.normalizeName_(person ? person.name : payload.name);
+-                const now = core.manilaTimestamp_(new Date());
+-                if (!person) state.people.set(deviceToken, { name, first_seen_at: now, last_seen_at: now });
+-                else person.last_seen_at = now;
+-                const event = { event_id: randomUUID(), date: validation.date, scanned_at: now, mode: validation.mode, name, device_token: deviceToken, qr_created_at: validation.qr_created_at };
++                const timestamp = core.manilaTimestamp_(now);
++                if (!person) state.people.set(deviceToken, { name, first_seen_at: timestamp, last_seen_at: timestamp });
++                else person.last_seen_at = timestamp;
++                const event = { event_id: randomUUID(), date: validation.date, scanned_at: timestamp, mode: validation.mode, name, device_token: deviceToken, qr_created_at: validation.qr_created_at };
+                 state.attendance.push(event);
+                 result = { ok: true, event };
+               }
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/backend.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/backend.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/backend.test.cjs"	2026-11-24 23:41:36.718814300 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/backend.test.cjs"	2026-11-25 07:54:28.841895600 +0800
+@@ -10,16 +10,21 @@
+   `${trigger}device`,
+   `  ${trigger}device`
+ ]);
++let manilaTestNow = MANILA_TEST_NOW;
++let manilaDateSequence = null;
+ class FixedDate extends Date {
+   constructor(...args) {
+-    super(...(args.length ? args : [MANILA_TEST_NOW]));
++    if (!args.length && manilaDateSequence) return new Date(manilaDateSequence.shift());
++    super(...(args.length ? args : [manilaTestNow]));
+   }
+   static now() {
+-    return new Date(MANILA_TEST_NOW).getTime();
++    return new Date(manilaTestNow).getTime();
+   }
+ }
+ 
+ function loadBackend() {
++  manilaTestNow = MANILA_TEST_NOW;
++  manilaDateSequence = null;
+   const sheets = new Map();
+   const properties = { SPREADSHEET_ID: 'sheet-test-id' };
+   let uuid = 0;
+@@ -79,6 +84,9 @@
+     sheets,
+     writes,
+     requestedTemplates,
++    setNow(value) { manilaTestNow = value; },
++    setDateSequence(values) { manilaDateSequence = values; },
++    getUuidCount() { return uuid; },
+     setLockAvailable(value) { lockAvailable = value; }
+   };
+ }
+@@ -88,6 +96,10 @@
+   return JSON.parse(output.text);
+ }
+ 
++function plain(value) {
++  return JSON.parse(JSON.stringify(value));
++}
++
+ async function withPreviewServer(run) {
+   const server = createPreviewServer();
+   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+@@ -120,14 +132,14 @@
+   const backend = loadBackend();
+   const date = today_(backend);
+   assert.equal(date, '2026-11-24');
+-  const generated = backend.context.generateDailyCodes_(date);
++  const generated = backend.context.generatePermanentCodes_();
+   const status = post(backend, 'scan.status', {
+-    date, mode: 'IN', code: generated.in_code, device_token: 'clock-device'
++    mode: 'IN', code: generated.in_code, device_token: 'clock-device'
+   });
+   assert.equal(status.ok, true);
+   assert.equal(status.date, '2026-11-24');
+   const recorded = post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code, device_token: 'clock-device', name: 'Ana Cruz'
++    mode: 'IN', code: generated.in_code, device_token: 'clock-device', name: 'Ana Cruz'
+   });
+   assert.equal(recorded.ok, true);
+   assert.equal(recorded.event.date, '2026-11-24');
+@@ -137,41 +149,145 @@
+ test('creates the documented Sheet tabs and headers', () => {
+   const backend = loadBackend();
+   backend.context.ensureSchema_();
+-  assert.deepEqual(Array.from(backend.sheets.get('Daily Codes')[0]), ['date', 'in_code', 'out_code', 'created_at', 'created_by']);
++  assert.deepEqual(Array.from(backend.sheets.get('QR Codes')[0]), ['in_code', 'out_code', 'created_at', 'created_by']);
+   assert.deepEqual(Array.from(backend.sheets.get('People')[0]), ['device_token', 'name', 'first_seen_at', 'last_seen_at']);
+   assert.deepEqual(Array.from(backend.sheets.get('Attendance')[0]), ['event_id', 'date', 'scanned_at', 'mode', 'name', 'device_token', 'qr_created_at']);
+ });
+ 
+-test('generates daily codes and invalidates the previous pair', () => {
++test('creates one permanent pair and returns it without later writes or UUID consumption', () => {
+   const backend = loadBackend();
+-  const date = today_(backend);
+-  const first = backend.context.generateDailyCodes_(date);
+-  const second = backend.context.generateDailyCodes_(date);
+-  assert.notEqual(first.in_code, second.in_code);
+-  assert.equal(post(backend, 'scan.status', { date, mode: 'IN', code: first.in_code, device_token: 'device-a' }).error, 'INVALID_CODE');
+-  assert.equal(post(backend, 'scan.status', { date, mode: 'OUT', code: second.out_code, device_token: 'device-a' }).ok, true);
+-  assert.equal(backend.sheets.get('Daily Codes').length, 2);
++  const first = backend.context.generatePermanentCodes_();
++  const writesAfterCreation = backend.writes.get('QR Codes');
++  const uuidsAfterCreation = backend.getUuidCount();
++  assert.equal(backend.sheets.get('QR Codes').length, 2);
++  assert.equal(uuidsAfterCreation, 2);
++
++  backend.setNow('2026-11-25T02:00:00.000Z');
++  const second = post(backend, 'admin.generate', { date: '2099-12-31' });
++  assert.deepEqual(second, { ok: true, record: plain(first) });
++  assert.equal(backend.sheets.get('QR Codes').length, 2);
++  assert.equal(backend.writes.get('QR Codes'), writesAfterCreation);
++  assert.equal(backend.getUuidCount(), uuidsAfterCreation);
++  assert.equal(Object.hasOwn(first, 'date'), false);
++  assert.equal(new URL(first.in_url).searchParams.has('date'), false);
++  assert.equal(new URL(first.out_url).searchParams.has('date'), false);
++});
++
++test('dates repeated and unmatched scans by the current Manila server day', () => {
++  const backend = loadBackend();
++  const generated = backend.context.generatePermanentCodes_();
++  const first = post(backend, 'scan.record', {
++    mode: 'IN', code: generated.in_code, device_token: 'device-a', name: 'Ana Cruz'
++  });
++  const repeated = post(backend, 'scan.record', {
++    mode: 'IN', code: generated.in_code, device_token: 'device-a'
++  });
++  backend.setNow('2026-11-25T02:00:00.000Z');
++  const staleDate = post(backend, 'scan.record', {
++    date: '2020-01-01', mode: 'IN', code: generated.in_code, device_token: 'device-a'
++  });
++  const futureDate = post(backend, 'scan.record', {
++    date: '2099-12-31', mode: 'OUT', code: generated.out_code,
++    device_token: 'unmatched-out-device', name: 'Luis Santos'
++  });
++
++  for (const result of [first, repeated, staleDate, futureDate]) assert.equal(result.ok, true);
++  assert.equal(first.event.date, '2026-11-24');
++  assert.equal(repeated.event.date, '2026-11-24');
++  assert.equal(staleDate.event.date, '2026-11-25');
++  assert.equal(staleDate.event.scanned_at, '2026-11-25T10:00:00+08:00');
++  assert.equal(futureDate.event.date, '2026-11-25');
++  assert.equal(futureDate.event.mode, 'OUT');
++  assert.deepEqual(plain(backend.context.listAttendance_('2026-11-24', '').totals), { in: 2, out: 0, people: 1, scans: 2 });
++  assert.deepEqual(plain(backend.context.listAttendance_('2026-11-25', '').totals), { in: 1, out: 1, people: 2, scans: 2 });
++});
++
++test('uses one server instant for a scan date and its exact timestamp across Manila midnight', () => {
++  const backend = loadBackend();
++  const generated = backend.context.generatePermanentCodes_();
++  backend.setDateSequence([
++    '2026-11-24T15:59:59.000Z',
++    '2026-11-24T16:00:00.000Z'
++  ]);
++  const result = post(backend, 'scan.record', {
++    mode: 'IN', code: generated.in_code, device_token: 'midnight-device', name: 'Ana Cruz'
++  });
++  assert.equal(result.ok, true);
++  assert.equal(result.event.date, '2026-11-24');
++  assert.equal(result.event.scanned_at, '2026-11-24T23:59:59+08:00');
++});
++
++test('rejects missing records, malformed requests, unknown codes, and wrong modes without scan writes', () => {
++  const missingBackend = loadBackend();
++  assert.deepEqual(post(missingBackend, 'scan.record', {
++    mode: 'IN', code: 'unknown', device_token: 'device-a', name: 'Ana Cruz'
++  }), { ok: false, error: 'CODE_NOT_FOUND' });
++  assert.equal(missingBackend.sheets.get('People').length, 1);
++  assert.equal(missingBackend.sheets.get('Attendance').length, 1);
++
++  const backend = loadBackend();
++  const generated = backend.context.generatePermanentCodes_();
++  const peopleBefore = JSON.parse(JSON.stringify(backend.sheets.get('People')));
++  const attendanceBefore = JSON.parse(JSON.stringify(backend.sheets.get('Attendance')));
++  const peopleWritesBefore = backend.writes.get('People');
++  const attendanceWritesBefore = backend.writes.get('Attendance');
++  const cases = [
++    [{ mode: 'IN', code: 'unknown', device_token: 'device-a', name: 'Ana Cruz' }, 'INVALID_CODE'],
++    [{ mode: 'OUT', code: generated.in_code, device_token: 'device-a', name: 'Ana Cruz' }, 'MODE_MISMATCH'],
++    [{ mode: 'SIDEWAYS', code: generated.in_code, device_token: 'device-a', name: 'Ana Cruz' }, 'INVALID_REQUEST'],
++    [{ mode: 'IN', device_token: 'device-a', name: 'Ana Cruz' }, 'INVALID_REQUEST']
++  ];
++  for (const [payload, error] of cases) {
++    assert.deepEqual(post(backend, 'scan.record', payload), { ok: false, error });
++  }
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('People'))), peopleBefore);
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('Attendance'))), attendanceBefore);
++  assert.equal(backend.writes.get('People'), peopleWritesBefore);
++  assert.equal(backend.writes.get('Attendance'), attendanceWritesBefore);
++});
++
++test('exposes no rotate, reset, or delete action', () => {
++  const backend = loadBackend();
++  const generated = backend.context.generatePermanentCodes_();
++  const before = JSON.parse(JSON.stringify(backend.sheets.get('QR Codes')));
++  const uuidCount = backend.getUuidCount();
++  for (const action of ['admin.rotate', 'admin.reset', 'admin.delete']) {
++    assert.deepEqual(post(backend, action, { date: today_(backend) }), { ok: false, error: 'UNKNOWN_ACTION' });
++  }
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('QR Codes'))), before);
++  assert.equal(backend.getUuidCount(), uuidCount);
++  assert.equal(post(backend, 'scan.status', {
++    mode: 'IN', code: generated.in_code, device_token: 'device-a'
++  }).ok, true);
++});
++
++test('a busy generation lock creates no pair and consumes no UUIDs', () => {
++  const backend = loadBackend();
++  backend.setLockAvailable(false);
++  assert.deepEqual(post(backend, 'admin.generate', {}), { ok: false, error: 'SHEET_BUSY' });
++  assert.equal(backend.sheets.has('QR Codes'), false);
++  assert.equal(backend.getUuidCount(), 0);
+ });
+ 
+ test('registers a device once and records every valid scan', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  const generated = backend.context.generateDailyCodes_(date);
++  const generated = backend.context.generatePermanentCodes_();
+   const first = post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code,
++    mode: 'IN', code: generated.in_code,
+     device_token: 'device-a', name: '  Ana   Cruz '
+   });
+   assert.equal(first.ok, true);
+   assert.equal(first.event.name, 'Ana Cruz');
+   const status = post(backend, 'scan.status', {
+-    date, mode: 'OUT', code: generated.out_code, device_token: 'device-a'
++    mode: 'OUT', code: generated.out_code, device_token: 'device-a'
+   });
+   assert.equal(status.name, 'Ana Cruz');
+   const second = post(backend, 'scan.record', {
+-    date, mode: 'OUT', code: generated.out_code, device_token: 'device-a'
++    mode: 'OUT', code: generated.out_code, device_token: 'device-a'
+   });
+   const third = post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code, device_token: 'device-a'
++    mode: 'IN', code: generated.in_code, device_token: 'device-a'
+   });
+   assert.equal(second.ok, true);
+   assert.equal(third.ok, true);
+@@ -182,9 +298,9 @@
+ test('rejects invalid codes without writing attendance', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  backend.context.generateDailyCodes_(date);
++  backend.context.generatePermanentCodes_();
+   const result = post(backend, 'scan.record', {
+-    date, mode: 'IN', code: 'wrong', device_token: 'device-a', name: 'Ana Cruz'
++    mode: 'IN', code: 'wrong', device_token: 'device-a', name: 'Ana Cruz'
+   });
+   assert.equal(result.ok, false);
+   assert.equal(backend.sheets.get('Attendance').length, 1);
+@@ -193,8 +309,8 @@
+ test('filters attendance and exports CSV', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  const generated = backend.context.generateDailyCodes_(date);
+-  post(backend, 'scan.record', { date, mode: 'IN', code: generated.in_code, device_token: 'device-a', name: 'Ana Cruz' });
++  const generated = backend.context.generatePermanentCodes_();
++  post(backend, 'scan.record', { mode: 'IN', code: generated.in_code, device_token: 'device-a', name: 'Ana Cruz' });
+   const listed = backend.context.listAttendance_(date, 'ana');
+   assert.equal(listed.rows.length, 1);
+   assert.equal(listed.totals.in, 1);
+@@ -206,9 +322,9 @@
+ test('records an unmatched OUT as the first scan', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  const generated = backend.context.generateDailyCodes_(date);
++  const generated = backend.context.generatePermanentCodes_();
+   const result = post(backend, 'scan.record', {
+-    date, mode: 'OUT', code: generated.out_code,
++    mode: 'OUT', code: generated.out_code,
+     device_token: 'first-out-device', name: 'Luis Santos'
+   });
+   assert.equal(result.ok, true);
+@@ -222,9 +338,9 @@
+   for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
+     const backend = loadBackend();
+     const date = today_(backend);
+-    const generated = backend.context.generateDailyCodes_(date);
++    const generated = backend.context.generatePermanentCodes_();
+     const result = post(backend, 'scan.record', {
+-      date, mode: 'IN', code: generated.in_code,
++      mode: 'IN', code: generated.in_code,
+       device_token: `new-formula-${index}`, name: ` \t${trigger}SUM(A1)\r\n`
+     });
+     assert.deepEqual(result, { ok: false, error: 'NAME_INVALID' });
+@@ -236,7 +352,7 @@
+ test('rejects formula-leading legacy names on returning scans without writes', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  const generated = backend.context.generateDailyCodes_(date);
++  const generated = backend.context.generatePermanentCodes_();
+   backend.context.ensureSchema_();
+   for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
+     backend.sheets.get('People').push([`legacy-formula-${index}`, `${trigger}legacy`, 'old', 'old']);
+@@ -244,7 +360,7 @@
+   const peopleBefore = JSON.parse(JSON.stringify(backend.sheets.get('People')));
+   for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
+     const result = post(backend, 'scan.record', {
+-      date, mode: 'IN', code: generated.in_code,
++      mode: 'IN', code: generated.in_code,
+       device_token: `legacy-formula-${index}`, name: 'Ignored replacement'
+     });
+     assert.deepEqual(result, { ok: false, error: 'NAME_INVALID' }, trigger);
+@@ -255,8 +371,7 @@
+ 
+ test('backend and preview reject dangerous device tokens with matching errors and zero writes', async () => {
+   const backend = loadBackend();
+-  const backendDate = today_(backend);
+-  const backendCodes = backend.context.generateDailyCodes_(backendDate);
++  const backendCodes = backend.context.generatePermanentCodes_();
+   const peopleBefore = JSON.parse(JSON.stringify(backend.sheets.get('People')));
+   const attendanceBefore = JSON.parse(JSON.stringify(backend.sheets.get('Attendance')));
+   const peopleWritesBefore = backend.writes.get('People');
+@@ -277,10 +392,10 @@
+       ];
+       for (const { device_token, error } of cases) {
+         const backendResult = post(backend, action, {
+-          date: backendDate, mode: 'IN', code: backendCodes.in_code, device_token, name: 'Ana Cruz'
++          mode: 'IN', code: backendCodes.in_code, device_token, name: 'Ana Cruz'
+         });
+         const previewResult = await previewPost(base, action, {
+-          date: previewDate, mode: 'IN', code: previewGenerated.record.in_code, device_token, name: 'Ana Cruz'
++          mode: 'IN', code: previewGenerated.record.in_code, device_token, name: 'Ana Cruz'
+         });
+         assert.deepEqual(backendResult, { ok: false, error }, `${action} backend ${JSON.stringify(device_token)}`);
+         assert.deepEqual(previewResult, backendResult, `${action} preview ${JSON.stringify(device_token)}`);
+@@ -300,23 +415,23 @@
+ test('backend preserves safe device tokens exactly and keeps the 100/101 character boundaries', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  const generated = backend.context.generateDailyCodes_(date);
++  const generated = backend.context.generatePermanentCodes_();
+   const spacedToken = '  safe-device  ';
+   const recorded = post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code, device_token: spacedToken, name: 'Ana Cruz'
++    mode: 'IN', code: generated.in_code, device_token: spacedToken, name: 'Ana Cruz'
+   });
+   assert.equal(recorded.ok, true);
+   assert.equal(recorded.event.device_token, spacedToken);
+   assert.equal(backend.sheets.get('People')[1][0], spacedToken);
+   const recognized = post(backend, 'scan.status', {
+-    date, mode: 'OUT', code: generated.out_code, device_token: spacedToken
++    mode: 'OUT', code: generated.out_code, device_token: spacedToken
+   });
+   assert.equal(recognized.name, 'Ana Cruz');
+   assert.equal(recognized.device_token, spacedToken);
+ 
+   const hundredCharacterToken = 'x'.repeat(100);
+   const hundred = post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code, device_token: hundredCharacterToken, name: 'Luis Santos'
++    mode: 'IN', code: generated.in_code, device_token: hundredCharacterToken, name: 'Luis Santos'
+   });
+   assert.equal(hundred.ok, true);
+   assert.equal(hundred.event.device_token, hundredCharacterToken);
+@@ -327,14 +442,14 @@
+   const attendanceWritesBefore = backend.writes.get('Attendance');
+   const hundredOneCharacterToken = 'y'.repeat(101);
+   const status = post(backend, 'scan.status', {
+-    date, mode: 'IN', code: generated.in_code, device_token: hundredOneCharacterToken
++    mode: 'IN', code: generated.in_code, device_token: hundredOneCharacterToken
+   });
+   assert.deepEqual(status, {
+     ok: true, date, mode: 'IN', name: null,
+     device_token: hundredOneCharacterToken, qr_created_at: generated.created_at
+   });
+   assert.deepEqual(post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code, device_token: hundredOneCharacterToken, name: 'Maria Clara'
++    mode: 'IN', code: generated.in_code, device_token: hundredOneCharacterToken, name: 'Maria Clara'
+   }), { ok: false, error: 'DEVICE_TOKEN_REQUIRED' });
+   assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('People'))), peopleBefore);
+   assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('Attendance'))), attendanceBefore);
+@@ -363,13 +478,12 @@
+   assert.deepEqual(post(backend, 'admin.generate', { date }), {
+     ok: true,
+     record: {
+-      date,
+       in_code: 'uuid-1',
+       out_code: 'uuid-2',
+       created_at: '2026-11-24T20:00:00+08:00',
+       created_by: 'SSLG Office',
+-      in_url: `https://script.test/exec?page=scan&date=${date}&mode=IN&code=uuid-1`,
+-      out_url: `https://script.test/exec?page=scan&date=${date}&mode=OUT&code=uuid-2`
++      in_url: 'https://script.test/exec?page=scan&mode=IN&code=uuid-1',
++      out_url: 'https://script.test/exec?page=scan&mode=OUT&code=uuid-2'
+     }
+   });
+   assert.deepEqual(post(backend, 'admin.list', { date, query: '' }), {
+@@ -387,15 +501,15 @@
+   const date = today_(backend);
+   const generated = backend.context.adminGenerate({ date });
+   assert.equal(generated.ok, true);
+-  assert.equal(generated.record.date, date);
++  assert.equal(Object.hasOwn(generated.record, 'date'), false);
+   assert.deepEqual(JSON.parse(JSON.stringify(backend.context.scanStatus({
+-    date, mode: 'IN', code: generated.record.in_code, device_token: 'wrapper-device'
++    mode: 'IN', code: generated.record.in_code, device_token: 'wrapper-device'
+   }))), {
+     ok: true, date, mode: 'IN', name: null,
+     device_token: 'wrapper-device', qr_created_at: generated.record.created_at
+   });
+   const recorded = backend.context.scanRecord({
+-    date, mode: 'IN', code: generated.record.in_code,
++    mode: 'IN', code: generated.record.in_code,
+     device_token: 'wrapper-device', name: 'Ana Cruz'
+   });
+   assert.deepEqual(Object.keys(recorded).sort(), ['event', 'ok']);
+@@ -421,14 +535,14 @@
+ test('a busy Sheet lock returns SHEET_BUSY without People or Attendance writes', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+-  const generated = backend.context.generateDailyCodes_(date);
++  const generated = backend.context.generatePermanentCodes_();
+   backend.setLockAvailable(false);
+   assert.deepEqual(post(backend, 'scan.record', {
+-    date, mode: 'IN', code: generated.in_code,
++    mode: 'IN', code: generated.in_code,
+     device_token: 'busy-device', name: 'Ana Cruz'
+   }), { ok: false, error: 'SHEET_BUSY' });
+-  assert.throws(() => backend.context.generateDailyCodes_(date), /SHEET_BUSY/);
++  assert.throws(() => backend.context.generatePermanentCodes_(), /SHEET_BUSY/);
+   assert.equal(backend.sheets.get('People').length, 1);
+   assert.equal(backend.sheets.get('Attendance').length, 1);
+-  assert.equal(backend.sheets.get('Daily Codes').length, 2);
++  assert.equal(backend.sheets.get('QR Codes').length, 2);
+ });
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/client-admin.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-admin.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/client-admin.test.cjs"	2026-11-24 14:52:50.886640000 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-admin.test.cjs"	2026-11-25 07:55:15.760723900 +0800
+@@ -29,6 +29,10 @@
+   return new Promise(resolve => setImmediate(resolve));
+ }
+ 
++function plain(value) {
++  return JSON.parse(JSON.stringify(value));
++}
++
+ async function renderedAdmin(api) {
+   const elements = new Map();
+ 
+@@ -94,7 +98,7 @@
+         };
+       }
+     },
+-    confirm: () => true,
++    confirm: () => { throw new Error('UNEXPECTED_CONFIRMATION'); },
+     location: { search: '?page=admin' },
+     URLSearchParams,
+     Blob,
+@@ -107,31 +111,59 @@
+   return { context, elements };
+ }
+ 
+-test('a late generation response cannot redisplay QR cards for a previous date', async () => {
+-  const generation = deferred();
+-  const changedDateList = deferred();
++test('shows a permanent pair without confirmation or a date-bound generation request', async () => {
++  const requests = [];
+   const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
+-  context.api = action => action === 'admin.generate' ? generation.promise : changedDateList.promise;
++  assert.match(elements.get('app').innerHTML, /Permanent QR codes/);
++  assert.match(elements.get('app').innerHTML, /same permanent IN and OUT codes every day/i);
++  assert.match(elements.get('app').innerHTML, /id="generate-codes"[^>]*>Show permanent QR pair/);
++  assert.doesNotMatch(elements.get('app').innerHTML, /invalidates|Generate QR pair|Daily QR codes/i);
++
++  const record = {
++    created_at: '2026-11-24T07:00:00+08:00',
++    in_url: 'https://script.test/exec?page=scan&mode=IN&code=permanent-in',
++    out_url: 'https://script.test/exec?page=scan&mode=OUT&code=permanent-out'
++  };
++  context.api = async (action, payload) => {
++    requests.push({ action, payload });
++    return action === 'admin.generate'
++      ? { ok: true, record }
++      : attendanceResult(payload.date, 'Initial', 1);
++  };
++  await context.generateCodes_('2026-11-24');
++
++  assert.deepEqual(plain(requests[0]), { action: 'admin.generate', payload: {} });
++  assert.equal(elements.get('qr-pair').hidden, false);
++  assert.match(elements.get('qr-pair').innerHTML, /Reusable every day/);
++  assert.match(elements.get('qr-pair').innerHTML, /Created 2026-11-24T07:00:00\+08:00/);
++  assert.match(elements.get('qr-pair').innerHTML, /permanent-in/);
++  assert.match(elements.get('qr-pair').innerHTML, /permanent-out/);
++});
+ 
+-  const pendingGeneration = context.generateCodes_('2026-11-24');
++test('changing the attendance date preserves permanent QR cards and only reloads records', async () => {
++  const requests = [];
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  const record = {
++    created_at: '2026-11-24T07:00:00+08:00',
++    in_url: 'https://script.test/exec?page=scan&mode=IN&code=permanent-in',
++    out_url: 'https://script.test/exec?page=scan&mode=OUT&code=permanent-out'
++  };
++  context.api = async (action, payload) => {
++    requests.push({ action, payload });
++    return action === 'admin.generate'
++      ? { ok: true, record }
++      : attendanceResult(payload.date, payload.date === '2026-11-25' ? 'New date' : 'Initial', 1);
++  };
++  await context.generateCodes_('2026-11-24');
+   elements.get('admin-date').value = '2026-11-25';
+   elements.get('admin-date').dispatch('change');
+-  changedDateList.resolve(attendanceResult('2026-11-25', 'New date', 2));
+   await flush();
+ 
+-  generation.resolve({
+-    ok: true,
+-    record: {
+-      date: '2026-11-24',
+-      created_at: '2026-11-24 07:00',
+-      in_url: 'https://script.test/exec?page=scan&date=2026-11-24&mode=IN&code=old-in',
+-      out_url: 'https://script.test/exec?page=scan&date=2026-11-24&mode=OUT&code=old-out'
+-    }
+-  });
+-  await pendingGeneration;
+-
+-  assert.equal(elements.get('qr-pair').hidden, true);
+-  assert.doesNotMatch(elements.get('qr-pair').innerHTML, /2026-11-24|old-in|old-out/);
++  assert.equal(elements.get('qr-pair').hidden, false);
++  assert.match(elements.get('qr-pair').innerHTML, /Reusable every day/);
++  assert.match(elements.get('qr-pair').innerHTML, /permanent-in/);
++  assert.equal(requests.filter(request => request.action === 'admin.generate').length, 1);
++  assert.deepEqual(plain(requests.at(-1)), { action: 'admin.list', payload: { date: '2026-11-25', query: '' } });
+   assert.match(elements.get('attendance-body').innerHTML, /New date/);
+   assert.doesNotMatch(elements.get('attendance-body').innerHTML, /Initial/);
+ });
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/client-static.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-static.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/client-static.test.cjs"	2026-11-24 23:42:07.524067900 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-static.test.cjs"	2026-11-25 07:42:54.884436300 +0800
+@@ -58,3 +58,38 @@
+   assert.match(message, /device token/i);
+   assert.match(message, /clear site storage/i);
+ });
++
++test('student scan parameters omit caller-supplied dates', () => {
++  const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++  const context = vm.createContext({
++    document: { addEventListener() {} },
++    location: { search: '?page=scan&date=2020-01-01&mode=IN&code=permanent-in' },
++    URLSearchParams
++  });
++  vm.runInContext(script, context, { filename: 'Client.html' });
++  assert.deepEqual(JSON.parse(JSON.stringify(context.scanParams_())), {
++    mode: 'IN', code: 'permanent-in'
++  });
++});
++
++test('student errors refer to permanent codes without date expiry or replacement wording', () => {
++  const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++  const context = vm.createContext({ document: { addEventListener() {} } });
++  vm.runInContext(script, context, { filename: 'Client.html' });
++  assert.match(context.errorMessage_({ message: 'CODE_NOT_FOUND' }), /permanent codes/i);
++  assert.doesNotMatch(context.errorMessage_({ message: 'INVALID_CODE' }), /newer|generated|today/i);
++  assert.equal(context.errorMessage_({ message: 'WRONG_DATE' }), context.errorMessage_({ message: 'REQUEST_FAILED' }));
++  assert.equal(context.errorMessage_({ message: 'CODE_EXPIRED' }), context.errorMessage_({ message: 'REQUEST_FAILED' }));
++});
++
++test('landing copy directs students to the posted permanent codes', () => {
++  const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++  const app = { innerHTML: '' };
++  const context = vm.createContext({
++    document: { addEventListener() {}, getElementById: () => app }
++  });
++  vm.runInContext(script, context, { filename: 'Client.html' });
++  context.renderLandingPage_();
++  assert.match(app.innerHTML, /permanent check-in or check-out QR codes/i);
++  assert.doesNotMatch(app.innerHTML, /today's|today’s/i);
++});
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/core.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/core.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/core.test.cjs"	2026-11-24 22:46:38.048481400 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/core.test.cjs"	2026-11-25 07:35:31.031697600 +0800
+@@ -22,16 +22,10 @@
+   assert.equal(api('manilaTimestamp_', date), '2026-11-24T00:30:00+08:00');
+ });
+ 
+-test('rejects impossible calendar dates', () => {
+-  assert.throws(() => api('createDailyCodeRecord_', '2026-02-30', new Date(), () => 'token-a'), /INVALID_DATE/);
+-  assert.throws(() => api('createDailyCodeRecord_', '2026-13-01', new Date(), () => 'token-a'), /INVALID_DATE/);
+-});
+-
+-test('creates distinct IN and OUT tokens and a creation timestamp', () => {
++test('creates distinct permanent IN and OUT tokens without a date field', () => {
+   const tokens = ['in-token', 'out-token'];
+-  const record = api('createDailyCodeRecord_', '2026-11-24', new Date('2026-11-24T01:00:00Z'), () => tokens.shift());
++  const record = api('createPermanentCodeRecord_', new Date('2026-11-24T01:00:00Z'), () => tokens.shift());
+   assert.deepEqual(JSON.parse(JSON.stringify(record)), {
+-    date: '2026-11-24',
+     in_code: 'in-token',
+     out_code: 'out-token',
+     created_at: '2026-11-24T09:00:00+08:00',
+@@ -39,23 +33,50 @@
+   });
+ });
+ 
+-test('validates matching code, mode, and current Manila date', () => {
++test('validates a permanent record on different Manila dates without a request date', () => {
++  const record = {
++    in_code: 'in-token',
++    out_code: 'out-token',
++    created_at: '2026-11-24T00:00:00+08:00'
++  };
++  for (const [now, date] of [
++    [new Date('2026-11-24T02:00:00Z'), '2026-11-24'],
++    [new Date('2026-11-25T02:00:00Z'), '2026-11-25']
++  ]) {
++    assert.deepEqual(JSON.parse(JSON.stringify(api('validateScan_', { mode: 'IN', code: 'in-token' }, record, now))), {
++      ok: true,
++      date,
++      mode: 'IN',
++      qr_created_at: '2026-11-24T00:00:00+08:00'
++    });
++  }
++});
++
++test('ignores supplied stale and future dates when validating permanent scans', () => {
+   const record = {
+-    date: '2026-11-24',
+     in_code: 'in-token',
+     out_code: 'out-token',
+     created_at: '2026-11-24T00:00:00+08:00'
+   };
+   const now = new Date('2026-11-24T02:00:00Z');
+-  assert.deepEqual(JSON.parse(JSON.stringify(api('validateScan_', { date: '2026-11-24', mode: 'IN', code: 'in-token' }, record, now))), {
+-    ok: true,
+-    date: '2026-11-24',
+-    mode: 'IN',
+-    qr_created_at: '2026-11-24T00:00:00+08:00'
+-  });
+-  assert.equal(api('validateScan_', { date: '2026-11-24', mode: 'IN', code: 'old-token' }, record, now).error, 'INVALID_CODE');
+-  assert.equal(api('validateScan_', { date: '2026-11-24', mode: 'OUT', code: 'in-token' }, record, now).error, 'MODE_MISMATCH');
+-  assert.equal(api('validateScan_', { date: '2026-11-24', mode: 'IN', code: 'in-token' }, record, new Date('2026-11-25T02:00:00Z')).error, 'CODE_EXPIRED');
++  for (const date of ['2020-01-01', '2099-12-31', 'not-a-date']) {
++    assert.equal(api('validateScan_', { date, mode: 'OUT', code: 'out-token' }, record, now).date, '2026-11-24');
++  }
++});
++
++test('rejects malformed, unknown, wrong-mode, and missing permanent records', () => {
++  const record = {
++    in_code: 'in-token',
++    out_code: 'out-token',
++    created_at: '2026-11-24T00:00:00+08:00'
++  };
++  const now = new Date('2026-11-24T02:00:00Z');
++  assert.equal(api('validateScan_', null, record, now).error, 'INVALID_REQUEST');
++  assert.equal(api('validateScan_', { mode: 'SIDEWAYS', code: 'in-token' }, record, now).error, 'INVALID_REQUEST');
++  assert.equal(api('validateScan_', { mode: 'IN' }, record, now).error, 'INVALID_REQUEST');
++  assert.equal(api('validateScan_', { mode: 'IN', code: 'in-token' }, null, now).error, 'CODE_NOT_FOUND');
++  assert.equal(api('validateScan_', { mode: 'IN', code: 'unknown' }, record, now).error, 'INVALID_CODE');
++  assert.equal(api('validateScan_', { mode: 'OUT', code: 'in-token' }, record, now).error, 'MODE_MISMATCH');
+ });
+ 
+ test('escapes CSV commas, quotes, and newlines', () => {
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/packaging.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/packaging.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/packaging.test.cjs"	2026-11-24 16:36:59.300165800 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/packaging.test.cjs"	2026-11-25 07:43:15.579927900 +0800
+@@ -2,6 +2,7 @@
+ const assert = require('node:assert/strict');
+ const fs = require('node:fs');
+ const path = require('node:path');
++const vm = require('node:vm');
+ 
+ const root = path.join(__dirname, '..');
+ 
+@@ -19,6 +20,35 @@
+   }
+ });
+ 
++test('packaged backend initializes the permanent QR Codes schema', () => {
++  const sheets = new Map();
++  function makeSheet(name) {
++    if (!sheets.has(name)) sheets.set(name, []);
++    const rows = sheets.get(name);
++    return {
++      getLastRow: () => rows.length,
++      getRange: (row, column, count) => ({
++        setValues: values => rows.splice(row - 1, count, ...values)
++      }),
++      setFrozenRows() {}
++    };
++  }
++  const spreadsheet = {
++    getSheetByName: name => sheets.has(name) ? makeSheet(name) : null,
++    insertSheet: name => { sheets.set(name, []); return makeSheet(name); }
++  };
++  const context = vm.createContext({
++    PropertiesService: { getScriptProperties: () => ({ getProperty: () => 'sheet-test-id' }) },
++    SpreadsheetApp: { openById: () => spreadsheet }
++  });
++  for (const file of ['Core.gs', 'Code.gs']) {
++    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
++  }
++  context.ensureSchema_();
++  assert.deepEqual(Array.from(sheets.keys()), ['QR Codes', 'People', 'Attendance']);
++  assert.deepEqual(Array.from(sheets.get('QR Codes')[0]), ['in_code', 'out_code', 'created_at', 'created_by']);
++});
++
+ test('project contains no hard-coded spreadsheet ID or secret assignment', () => {
+   for (const file of ['Core.gs', 'Code.gs', 'Client.html', 'preview/server.cjs']) {
+     const text = fs.readFileSync(path.join(root, file), 'utf8');
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/preview.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/preview.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/preview.test.cjs"	2026-11-24 22:47:32.586553400 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/preview.test.cjs"	2026-11-25 08:02:34.366722800 +0800
+@@ -24,7 +24,7 @@
+   const date = new Intl.DateTimeFormat('en-CA', {
+     timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
+   }).format(new Date());
+-  const generated = await post(base, 'admin.generate', { date });
++  const generated = await post(base, 'admin.generate', {});
+   assert.equal(generated.ok, true);
+   return { date, record: generated.record };
+ }
+@@ -46,17 +46,17 @@
+     const generated = await post(base, 'admin.generate', { date });
+     assert.equal(generated.ok, true);
+     const first = await post(base, 'scan.record', {
+-      date, mode: 'IN', code: generated.record.in_code,
++      mode: 'IN', code: generated.record.in_code,
+       device_token: 'preview-device', name: 'Ana Cruz'
+     });
+     assert.equal(first.ok, true);
+     const status = await post(base, 'scan.status', {
+-      date, mode: 'OUT', code: generated.record.out_code,
++      mode: 'OUT', code: generated.record.out_code,
+       device_token: 'preview-device'
+     });
+     assert.equal(status.name, 'Ana Cruz');
+     const second = await post(base, 'scan.record', {
+-      date, mode: 'OUT', code: generated.record.out_code,
++      mode: 'OUT', code: generated.record.out_code,
+       device_token: 'preview-device'
+     });
+     assert.equal(second.ok, true);
+@@ -65,6 +65,67 @@
+   });
+ });
+ 
++test('preview reuses one permanent pair across Manila dates while attendance stays daily', async t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-24T02:00:00.000Z') });
++  await withServer(async base => {
++    const firstGeneration = await post(base, 'admin.generate', { date: '2020-01-01' });
++    assert.equal(firstGeneration.ok, true);
++    const record = firstGeneration.record;
++    assert.equal(Object.hasOwn(record, 'date'), false);
++    assert.equal(new URL(record.in_url).searchParams.has('date'), false);
++    assert.equal(new URL(record.out_url).searchParams.has('date'), false);
++
++    t.mock.timers.setTime(Date.parse('2026-11-25T02:00:00.000Z'));
++    const secondGeneration = await post(base, 'admin.generate', { date: '2099-12-31' });
++    assert.deepEqual(secondGeneration, firstGeneration);
++
++    t.mock.timers.setTime(Date.parse('2026-11-24T02:00:00.000Z'));
++    const first = await post(base, 'scan.record', {
++      mode: 'IN', code: record.in_code, device_token: 'preview-device', name: 'Ana Cruz'
++    });
++    const repeated = await post(base, 'scan.record', {
++      mode: 'IN', code: record.in_code, device_token: 'preview-device'
++    });
++    t.mock.timers.setTime(Date.parse('2026-11-25T02:00:00.000Z'));
++    const secondDay = await post(base, 'scan.record', {
++      date: '2020-01-01', mode: 'OUT', code: record.out_code,
++      device_token: 'preview-device'
++    });
++    const unmatched = await post(base, 'scan.record', {
++      date: '2099-12-31', mode: 'OUT', code: record.out_code,
++      device_token: 'other-device', name: 'Luis Santos'
++    });
++    for (const result of [first, repeated, secondDay, unmatched]) assert.equal(result.ok, true);
++    assert.equal(first.event.date, '2026-11-24');
++    assert.equal(repeated.event.date, '2026-11-24');
++    assert.equal(secondDay.event.date, '2026-11-25');
++    assert.equal(secondDay.event.scanned_at, '2026-11-25T10:00:00+08:00');
++    assert.equal(unmatched.event.date, '2026-11-25');
++    assert.deepEqual((await post(base, 'admin.list', { date: '2026-11-24' })).totals, { scans: 2, people: 1, in: 2, out: 0 });
++    assert.deepEqual((await post(base, 'admin.list', { date: '2026-11-25' })).totals, { scans: 2, people: 2, in: 0, out: 2 });
++  });
++});
++
++test('preview rejects missing and invalid permanent codes without attendance writes', async () => {
++  await withServer(async base => {
++    assert.deepEqual(await post(base, 'scan.record', {
++      mode: 'IN', code: 'unknown', device_token: 'device-a', name: 'Ana Cruz'
++    }), { ok: false, error: 'CODE_NOT_FOUND' });
++    const { date, record } = await generateForToday(base);
++    const cases = [
++      [{ mode: 'IN', code: 'unknown', device_token: 'device-a', name: 'Ana Cruz' }, 'INVALID_CODE'],
++      [{ mode: 'OUT', code: record.in_code, device_token: 'device-a', name: 'Ana Cruz' }, 'MODE_MISMATCH'],
++      [{ mode: 'SIDEWAYS', code: record.in_code, device_token: 'device-a', name: 'Ana Cruz' }, 'INVALID_REQUEST'],
++      [{ mode: 'IN', device_token: 'device-a', name: 'Ana Cruz' }, 'INVALID_REQUEST']
++    ];
++    for (const [payload, error] of cases) {
++      assert.deepEqual(await post(base, 'scan.record', payload), { ok: false, error });
++    }
++    const listed = await post(base, 'admin.list', { date });
++    assert.deepEqual(listed.totals, { scans: 0, people: 0, in: 0, out: 0 });
++  });
++});
++
+ test('preview exports recorded attendance as CSV', async () => {
+   await withServer(async base => {
+     const date = new Intl.DateTimeFormat('en-CA', {
+@@ -72,7 +133,7 @@
+     }).format(new Date());
+     const generated = await post(base, 'admin.generate', { date });
+     await post(base, 'scan.record', {
+-      date, mode: 'IN', code: generated.record.in_code,
++      mode: 'IN', code: generated.record.in_code,
+       device_token: 'export-device', name: 'Ana Cruz'
+     });
+     const exported = await post(base, 'admin.export', { date });
+@@ -104,7 +165,7 @@
+ test('preview scan handlers reject missing device tokens without writing attendance', async () => {
+   await withServer(async base => {
+     const { date, record } = await generateForToday(base);
+-    const payload = { date, mode: 'IN', code: record.in_code, name: 'Ana Cruz' };
++    const payload = { mode: 'IN', code: record.in_code, name: 'Ana Cruz' };
+     const results = [];
+     for (const action of ['scan.status', 'scan.record']) {
+       results.push(await post(base, action, payload));
+@@ -124,7 +185,7 @@
+     const { date, record } = await generateForToday(base);
+     const deviceToken = 'x'.repeat(101);
+     const payload = {
+-      date, mode: 'IN', code: record.in_code,
++      mode: 'IN', code: record.in_code,
+       device_token: deviceToken, name: 'Ana Cruz'
+     };
+     assert.deepEqual(await post(base, 'scan.status', payload), {
+@@ -145,7 +206,7 @@
+     const { date, record } = await generateForToday(base);
+     for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
+       const result = await post(base, 'scan.record', {
+-        date, mode: 'IN', code: record.in_code,
++        mode: 'IN', code: record.in_code,
+         device_token: `formula-device-${index}`, name: `  ${trigger}SUM(A1)  `
+       });
+       assert.deepEqual(result, { ok: false, error: 'NAME_INVALID' });
+@@ -161,11 +222,11 @@
+     const { date, record } = await generateForToday(base);
+     const deviceToken = 'x'.repeat(100);
+     const recorded = await post(base, 'scan.record', {
+-      date, mode: 'in', code: record.in_code, device_token: deviceToken, name: 'Ana Cruz'
++      mode: 'in', code: record.in_code, device_token: deviceToken, name: 'Ana Cruz'
+     });
+     assert.equal(recorded.ok, true);
+     const status = await post(base, 'scan.status', {
+-      date, mode: 'out', code: record.out_code, device_token: deviceToken
++      mode: 'out', code: record.out_code, device_token: deviceToken
+     });
+     assert.deepEqual(status, {
+       ok: true, date, mode: 'OUT', name: 'Ana Cruz',
+@@ -182,7 +243,7 @@
+       ['search-device-2', 'Agent 42']
+     ]) {
+       const recorded = await post(base, 'scan.record', {
+-        date, mode: 'IN', code: record.in_code, device_token, name
++        mode: 'IN', code: record.in_code, device_token, name
+       });
+       assert.equal(recorded.ok, true);
+     }
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/qr.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/qr.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-permanent-pair/tests/qr.test.cjs"	2026-11-24 14:15:59.519092500 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/qr.test.cjs"	2026-11-25 07:35:52.634725800 +0800
+@@ -21,11 +21,11 @@
+ }
+ 
+ test('IN QR payload decodes exactly', () => {
+-  const value = 'https://script.test/exec?page=scan&date=2026-11-24&mode=IN&code=in-token';
++  const value = 'https://script.test/exec?page=scan&mode=IN&code=in-token';
+   assert.equal(decodeQr(value), value);
+ });
+ 
+ test('OUT QR payload decodes exactly', () => {
+-  const value = 'https://script.test/exec?page=scan&date=2026-11-24&mode=OUT&code=out-token';
++  const value = 'https://script.test/exec?page=scan&mode=OUT&code=out-token';
+   assert.equal(decodeQr(value), value);
+ });

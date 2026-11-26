@@ -1,0 +1,54 @@
+filters:
+  and:
+    - 'file.folder != "Scheduler_v1-main"'
+    - 'file.folder != "99 Templates"'
+views:
+  - type: table
+    name: All records
+    filters:
+      and:
+        - 'type == "record"'
+    order:
+      - title
+      - record_type
+      - record_id
+      - date
+      - event_date
+      - activity
+      - status
+      - source_file
+  - type: table
+    name: Proposals
+    filters:
+      and:
+        - 'type == "record"'
+        - 'record_type == "proposal"'
+    order: [title, event_date, activity, status, source_file]
+  - type: table
+    name: Completion reports
+    filters:
+      and:
+        - 'type == "record"'
+        - 'record_type == "completion-report"'
+    order: [title, event_date, activity, status, source_file]
+  - type: table
+    name: Memoranda
+    filters:
+      and:
+        - 'type == "record"'
+        - 'record_type == "memorandum"'
+    order: [title, record_id, date, status, source_file]
+  - type: table
+    name: Needs review
+    filters:
+      and:
+        - 'type == "record"'
+        - 'needs_review == "yes"'
+    order: [title, record_type, record_id, source_file]
+  - type: table
+    name: Activities needing review
+    filters:
+      and:
+        - 'type == "activity"'
+        - 'needs_review == "yes"'
+    order: [title, start_date, status, venue]

@@ -1,0 +1,481 @@
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/Client.html ./Client.html
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/Client.html	2026-11-24 14:54:10.268342400 +0800
++++ ./Client.html	2026-11-24 22:59:39.329374600 +0800
+@@ -44,6 +44,7 @@
+ 
+ const ERROR_MESSAGES = {
+   NAME_REQUIRED: 'Please enter your name.',
++  NAME_INVALID: 'Please enter a name that does not start with =, +, -, or @.',
+   NAME_TOO_LONG: 'Please use a name of 80 characters or fewer.',
+   DEVICE_TOKEN_REQUIRED: 'This browser could not create a device token. Enable site storage and try again.',
+   INVALID_REQUEST: 'This QR link is incomplete or invalid.',
+@@ -52,7 +53,7 @@
+   CODE_EXPIRED: 'This QR code has expired. Ask the SSLG office for today’s code.',
+   INVALID_CODE: 'This QR code is no longer valid. A newer code may have been generated.',
+   MODE_MISMATCH: 'This is not the correct code for this attendance action.',
+-  SPREADSHEET_NOT_CONFIGURED: 'The attendance Sheet is not configured yet. Please contact the SSLG office.',
++  SPREADSHEET_NOT_CONFIGURED: 'The attendance Sheet is not configured yet. Ask the SSLG office to set SPREADSHEET_ID in Apps Script Project Settings → Script Properties.',
+   SHEET_BUSY: 'The office Sheet is busy. Please try again in a moment.',
+   REQUEST_FAILED: 'The scan was not recorded. Check your connection and try again.',
+   APPS_SCRIPT_FAILED: 'The scan was not recorded. Check your connection and try again.'
+@@ -109,7 +110,7 @@
+           <p class="helper-text">You only need to enter your name once on this phone.</p>
+         </form>
+       `}
+-      <p id="scan-error" class="notice notice-error" hidden></p>
++      <p id="scan-error" class="notice notice-error" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
+     </section>`;
+ 
+   const submit = name => submitScan_(params, deviceToken, name);
+@@ -137,11 +138,12 @@
+       <section class="card success-card" aria-live="polite">
+         <div class="success-mark" aria-hidden="true">OK</div>
+         <p class="eyebrow">Recorded</p>
+-        <h2>${event.mode === 'IN' ? 'Checked in' : 'Checked out'}</h2>
++        <h2 id="scan-success" tabindex="-1">${event.mode === 'IN' ? 'Checked in' : 'Checked out'}</h2>
+         <p class="registered-name">${escapeHtml_(event.name)}</p>
+         <p class="scan-meta">${escapeHtml_(event.scanned_at)} · Philippines time</p>
+         <p class="helper-text">You may close this page.</p>
+       </section>`;
++    document.getElementById('scan-success').focus();
+   } catch (error) {
+     if (button) button.disabled = false;
+     if (errorBox) {
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/Core.gs ./Core.gs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/Core.gs	2026-11-24 13:32:32.720631300 +0800
++++ ./Core.gs	2026-11-24 22:59:18.257700500 +0800
+@@ -7,6 +7,7 @@
+ function normalizeName_(value) {
+   const name = String(value == null ? '' : value).trim().replace(/\s+/g, ' ');
+   if (!name) throw new Error('NAME_REQUIRED');
++  if (/^[=+\-@]/.test(name)) throw new Error('NAME_INVALID');
+   if (name.length > 80) throw new Error('NAME_TOO_LONG');
+   return name;
+ }
+@@ -74,7 +75,9 @@
+ }
+ 
+ function csvEscape_(value) {
+-  return `"${String(value == null ? '' : value).replace(/"/g, '""')}"`;
++  const text = String(value == null ? '' : value);
++  const safeText = /^[ \t\r\n]*[=+\-@\t\r\n]/.test(text) ? `'${text}` : text;
++  return `"${safeText.replace(/"/g, '""')}"`;
+ }
+ 
+ function toCsv_(headers, rows) {
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/SETUP.md ./SETUP.md
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/SETUP.md	2026-11-24 16:38:21.672044300 +0800
++++ ./SETUP.md	2026-11-24 23:02:11.395389900 +0800
+@@ -48,7 +48,9 @@
+ 1. On a phone, scan the IN code.
+ 2. Register a name and confirm.
+ 3. Scan the OUT code on the same phone and confirm the remembered name.
+-4. Check the Sheet and the office list.
++4. Regenerate the codes and confirm the earlier codes are rejected without writes.
++5. Confirm the real office list and exported CSV show the test records.
++6. Inspect the real `Daily Codes`, `People`, and `Attendance` tabs and document their columns against the app headers.
+ 
+ A live deployment is not verified until the owner completes the scan test in this guide.
+ 
+@@ -65,7 +67,8 @@
+ 
+ ## 10. Troubleshooting
+ 
+-- `SPREADSHEET_NOT_CONFIGURED`: Add the `SPREADSHEET_ID` Script Property with the copied Spreadsheet ID, save it, and deploy a new version of the web app.
++- `SPREADSHEET_NOT_CONFIGURED`: In Apps Script `Project Settings → Script Properties`, add `SPREADSHEET_ID` with the copied Spreadsheet ID, save it, and deploy a new version of the web app.
++- `NAME_INVALID`: The name starts with a spreadsheet formula character. Ask the student to enter a name that does not start with `=`, `+`, `-`, or `@`. If a remembered name was manually edited in the `People` tab, correct that stored name before the next scan.
+ - Expired or invalid codes: Use today's freshly generated pair. Codes from a different date expire at the end of that Manila calendar day; generating a new pair replaces an older pair. If a scan says the code is invalid or the action does not match, ask the office to generate and print a new pair.
+ - Sheet permission errors: Confirm that the deploying user owns or can edit `SSLG Office Attendance`, that `SPREADSHEET_ID` identifies that Sheet, and that the requested Google permissions were authorized. After fixing access or configuration, deploy a new version.
+ - Browser local-storage loss: The remembered name depends on browser site storage. If storage is blocked or cleared, the phone may ask for the name again. Use the same browser and allow site storage to retain it.
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/VERIFICATION.md ./VERIFICATION.md
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/VERIFICATION.md	2026-11-24 22:18:00.192914500 +0800
++++ ./VERIFICATION.md	2026-11-24 23:22:17.732315500 +0800
+@@ -249,3 +249,67 @@
+ - Task 7 changed `SSLG Attendance App/Styles.html` for the minimal print fix, added `SSLG Attendance App/VERIFICATION.md`, and removed its own three temporary scratch PDFs. It also created the approved SDD report outside the app at `.superpowers/sdd/2026-11-24-sslg-qr-attendance/task-7-report.md`.
+ - The final app-source comparison against `before-task-7` (excluding `node_modules`) contains only modified `Styles.html` and added `VERIFICATION.md`. The three scratch PDFs were absent from that baseline and are absent after cleanup. No unsupported vault-wide file counts or whole-vault hash claims are made.
+ - Print RED/GREEN evidence is Chromium print-media emulation, computed layout, and generated PDF page counts, not a physical-printer test. Mobile evidence is an isolated Chromium context at `390×844`, not a physical phone or native-camera scan.
++
++## Final fix wave — fresh evidence (2026-11-24)
++
++This section records the final whole-app fix wave. It is distinct from the preserved Task 7 evidence above; the earlier browser checklist was not rerun in full.
++
++### Security, accessibility, configuration, and parity
++
++- `Core.gs` rejects normalized names beginning with `=`, `+`, `-`, or `@` as `NAME_INVALID` before person upsert or Attendance append. Existing blank-name, 80-character, whitespace, and punctuation rules remain covered.
++- CSV escaping prefixes an apostrophe before normal quoting for formula-leading fields, leading tab/CR/LF fields, and leading-space variants. Export does not mutate stored rows; a manually edited legacy Attendance row is covered.
++- The student submission error is `role="alert"`, `aria-live="assertive"`, and `aria-atomic="true"`. Successful IN and OUT screens move focus to `#scan-success` with `tabindex="-1"`.
++- `SPREADSHEET_NOT_CONFIGURED` now directs the office to set `SPREADSHEET_ID` in Apps Script `Project Settings → Script Properties`.
++- Preview status now accepts a 101-character device token like the backend; preview record still rejects it with `DEVICE_TOKEN_REQUIRED` and writes nothing.
++- Backend regressions also cover first-scan unmatched OUT, direct admin HTTP actions, public wrappers, `doGet` HTML, a fixed Manila test clock (`2026-11-24T20:00:00+08:00`), and `SHEET_BUSY` no-write behavior.
++
++### RED / GREEN evidence
++
++Tests were written or modified before production changes. Focused RED runs failed for the intended missing behavior:
++
++```text
++core:       9 tests, 7 pass, 2 fail
++client:     7 tests, 4 pass, 3 fail
++preview:    9 tests, 7 pass, 2 fail
++backend:   13 tests, 10 pass, 3 fail
++```
++
++The failures included missing `NAME_INVALID`, unneutralized CSV values, missing alert/focus markup, preview status rejecting a 101-character token, and formula-like preview names being recorded. After the minimal fixes, the same focused files were GREEN: core `9/9`, client static `7/7`, preview `9/9`, backend `13/13`.
++
++### Final automated result
++
++Working directory: `SSLG Attendance App/`.
++
++```text
++$ npm test
++> sslg-office-attendance@1.0.0 test
++> node --test
++ℹ tests 47
++ℹ suites 0
++ℹ pass 47
++ℹ fail 0
++ℹ cancelled 0
++ℹ skipped 0
++ℹ todo 0
++ℹ duration_ms 1765.5935
++```
++
++Exit code: `0`.
++
++### Focused final Playwright smoke
++
++A fresh local preview was started as task `b6a5uuj5a` on `127.0.0.1:4173`. Playwright MCP/Chromium performed only the focused checks below:
++
++1. Generated a real preview code pair for Manila date `2026-11-24` at `2026-11-24T23:06:37+08:00`.
++2. With fresh browser storage, registered `Final Fix Ana` through the IN form. Success read `Checked in`; `document.activeElement.id` was `scan-success`, and the heading had `tabindex="-1"`. The preview list showed exactly `1` scan and `1` person.
++3. Cleared only the device token, reopened IN, and submitted `  =SUM(A1)  `. The visible error read `Please enter a name that does not start with =, +, -, or @.` Its measured attributes were `role="alert"`, `aria-live="assertive"`, and `aria-atomic="true"`. There were zero success headings, and the list remained at `1` scan / `1` person with no formula-like row.
++4. Restored the original browser device token and opened OUT. The page showed `Continuing as` / `Final Fix Ana`, no registration form, and `Confirm check out`. Confirmation showed `Checked out`, again with focus on `scan-success`. Final totals were `2` scans, `1` person, `1` IN, and `1` OUT; both rows belonged to `Final Fix Ana`.
++5. Playwright console inspection reported `Total messages: 0 (Errors: 0, Warnings: 0)`.
++
++The browser tab was closed and only the preview task started for this smoke was stopped. Port `4173` had no remaining listener; only transient `TIME_WAIT` entries were observed. No credentials, real Spreadsheet ID, external deployment, or production URL was used.
++
++### Setup and deployment status
++
++`SETUP.md` now requires code regeneration with old-code rejection and no writes, real office-list/CSV confirmation, and inspection/documentation of the real `Daily Codes`, `People`, and `Attendance` columns. It includes `NAME_INVALID` troubleshooting while preserving the public-admin warning and the exact pending-deployment statement.
++
++**Real Google Apps Script/Sheets smoke test: Pending owner deployment.** Local preview evidence does not verify the owner's Spreadsheet or Apps Script execution.
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/preview/server.cjs ./preview/server.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/preview/server.cjs	2026-11-24 15:57:07.823744900 +0800
++++ ./preview/server.cjs	2026-11-24 22:58:58.344056400 +0800
+@@ -54,7 +54,7 @@
+           if (!validation.ok) result = validation;
+           else {
+             const deviceToken = String(payload.device_token || '');
+-            if (!deviceToken || deviceToken.length > 100) result = { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++            if (!deviceToken || (action === 'scan.record' && deviceToken.length > 100)) result = { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
+             else {
+               const person = state.people.get(deviceToken);
+               if (action === 'scan.status') {
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/backend.test.cjs ./tests/backend.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/backend.test.cjs	2026-11-24 13:48:21.167274600 +0800
++++ ./tests/backend.test.cjs	2026-11-24 22:57:50.575472000 +0800
+@@ -4,11 +4,23 @@
+ const path = require('node:path');
+ const vm = require('node:vm');
+ 
++const MANILA_TEST_NOW = '2026-11-24T12:00:00.000Z';
++class FixedDate extends Date {
++  constructor(...args) {
++    super(...(args.length ? args : [MANILA_TEST_NOW]));
++  }
++  static now() {
++    return new Date(MANILA_TEST_NOW).getTime();
++  }
++}
++
+ function loadBackend() {
+   const sheets = new Map();
+   const properties = { SPREADSHEET_ID: 'sheet-test-id' };
+   let uuid = 0;
+   let baseUrl = 'https://script.test/exec';
++  let lockAvailable = true;
++  const requestedTemplates = [];
+ 
+   function makeSheet(name) {
+     if (!sheets.has(name)) sheets.set(name, []);
+@@ -33,15 +45,15 @@
+ 
+   const context = vm.createContext({
+     console,
+-    Date,
++    Date: FixedDate,
+     Intl,
+     JSON,
+     PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties[key] || null }) },
+     SpreadsheetApp: { openById: () => spreadsheet },
+-    LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
++    LockService: { getScriptLock: () => ({ tryLock: () => lockAvailable, releaseLock: () => {} }) },
+     Utilities: { getUuid: () => `uuid-${++uuid}` },
+     ScriptApp: { getService: () => ({ getUrl: () => baseUrl }) },
+-    HtmlService: { createTemplateFromFile: () => ({ evaluate: () => 'html' }) },
++    HtmlService: { createTemplateFromFile: name => { requestedTemplates.push(name); return { evaluate: () => 'html' }; } },
+     ContentService: {
+       MimeType: { JSON: 'application/json' },
+       createTextOutput: text => ({ setMimeType: () => ({ text }) })
+@@ -50,7 +62,12 @@
+ 
+   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Core.gs'), 'utf8'), context);
+   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
+-  return { context, sheets };
++  return {
++    context,
++    sheets,
++    requestedTemplates,
++    setLockAvailable(value) { lockAvailable = value; }
++  };
+ }
+ 
+ function post(backend, action, payload) {
+@@ -130,3 +147,144 @@
+   assert.equal(exported.ok, true);
+   assert.match(exported.csv, /"Ana Cruz"/);
+ });
++
++test('records an unmatched OUT as the first scan', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.generateDailyCodes_(date);
++  const result = post(backend, 'scan.record', {
++    date, mode: 'OUT', code: generated.out_code,
++    device_token: 'first-out-device', name: 'Luis Santos'
++  });
++  assert.equal(result.ok, true);
++  assert.equal(result.event.mode, 'OUT');
++  assert.equal(result.event.scanned_at, '2026-11-24T20:00:00+08:00');
++  assert.equal(backend.sheets.get('People').length, 2);
++  assert.equal(backend.sheets.get('Attendance').length, 2);
++});
++
++test('rejects every formula-leading new name before People or Attendance writes', () => {
++  for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
++    const backend = loadBackend();
++    const date = today_(backend);
++    const generated = backend.context.generateDailyCodes_(date);
++    const result = post(backend, 'scan.record', {
++      date, mode: 'IN', code: generated.in_code,
++      device_token: `new-formula-${index}`, name: ` \t${trigger}SUM(A1)\r\n`
++    });
++    assert.deepEqual(result, { ok: false, error: 'NAME_INVALID' });
++    assert.equal(backend.sheets.get('People').length, 1);
++    assert.equal(backend.sheets.get('Attendance').length, 1);
++  }
++});
++
++test('rejects formula-leading legacy names on returning scans without writes', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.generateDailyCodes_(date);
++  backend.context.ensureSchema_();
++  for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
++    backend.sheets.get('People').push([`legacy-formula-${index}`, `${trigger}legacy`, 'old', 'old']);
++  }
++  const peopleBefore = JSON.parse(JSON.stringify(backend.sheets.get('People')));
++  for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
++    const result = post(backend, 'scan.record', {
++      date, mode: 'IN', code: generated.in_code,
++      device_token: `legacy-formula-${index}`, name: 'Ignored replacement'
++    });
++    assert.deepEqual(result, { ok: false, error: 'NAME_INVALID' }, trigger);
++  }
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('People'))), peopleBefore);
++  assert.equal(backend.sheets.get('Attendance').length, 1);
++});
++
++test('neutralizes dangerous legacy CSV fields without changing stored rows', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  backend.context.ensureSchema_();
++  const legacyRow = ['=event', date, '\tscanned', '+IN', '-@name', '@device', '\rcreated'];
++  backend.sheets.get('Attendance').push(legacyRow);
++  const exported = backend.context.exportAttendanceCsv_(date);
++  const expectedRow = [
++    '"\'=event"', `"${date}"`, '"\'\tscanned"', '"\'+IN"',
++    '"\'-@name"', '"\'@device"', '"\'\rcreated"'
++  ].join(',');
++  assert.equal(exported.csv, `"event_id","date","scanned_at","mode","name","device_token","qr_created_at"\n${expectedRow}`);
++  assert.deepEqual(Array.from(backend.sheets.get('Attendance')[1]), legacyRow);
++});
++
++test('direct admin HTTP actions return generation, list, and export shapes', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  assert.deepEqual(post(backend, 'admin.generate', { date }), {
++    ok: true,
++    record: {
++      date,
++      in_code: 'uuid-1',
++      out_code: 'uuid-2',
++      created_at: '2026-11-24T20:00:00+08:00',
++      created_by: 'SSLG Office',
++      in_url: `https://script.test/exec?page=scan&date=${date}&mode=IN&code=uuid-1`,
++      out_url: `https://script.test/exec?page=scan&date=${date}&mode=OUT&code=uuid-2`
++    }
++  });
++  assert.deepEqual(post(backend, 'admin.list', { date, query: '' }), {
++    ok: true, rows: [], totals: { in: 0, out: 0, people: 0, scans: 0 }
++  });
++  assert.deepEqual(post(backend, 'admin.export', { date }), {
++    ok: true,
++    csv: '"event_id","date","scanned_at","mode","name","device_token","qr_created_at"',
++    filename: `SSLG-attendance-${date}.csv`
++  });
++});
++
++test('public wrappers return scan and admin result shapes', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.adminGenerate({ date });
++  assert.equal(generated.ok, true);
++  assert.equal(generated.record.date, date);
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.context.scanStatus({
++    date, mode: 'IN', code: generated.record.in_code, device_token: 'wrapper-device'
++  }))), {
++    ok: true, date, mode: 'IN', name: null,
++    device_token: 'wrapper-device', qr_created_at: generated.record.created_at
++  });
++  const recorded = backend.context.scanRecord({
++    date, mode: 'IN', code: generated.record.in_code,
++    device_token: 'wrapper-device', name: 'Ana Cruz'
++  });
++  assert.deepEqual(Object.keys(recorded).sort(), ['event', 'ok']);
++  assert.equal(recorded.event.name, 'Ana Cruz');
++  const listed = backend.context.adminList({ date, query: 'ana' });
++  assert.deepEqual(Object.keys(listed).sort(), ['ok', 'rows', 'totals']);
++  assert.equal(listed.rows.length, 1);
++  assert.deepEqual(JSON.parse(JSON.stringify(listed.totals)), { in: 1, out: 0, people: 1, scans: 1 });
++  const exported = backend.context.adminExport({ date });
++  assert.deepEqual(Object.keys(exported).sort(), ['csv', 'filename', 'ok']);
++  assert.match(exported.csv, /"Ana Cruz"/);
++});
++
++test('doGet evaluates Index HTML for landing, scan, admin, and missing events', () => {
++  const backend = loadBackend();
++  assert.equal(backend.context.doGet(), 'html');
++  assert.equal(backend.context.doGet({ parameter: {} }), 'html');
++  assert.equal(backend.context.doGet({ parameter: { page: 'scan' } }), 'html');
++  assert.equal(backend.context.doGet({ parameter: { page: 'admin' } }), 'html');
++  assert.deepEqual(backend.requestedTemplates, ['Index', 'Index', 'Index', 'Index']);
++});
++
++test('a busy Sheet lock returns SHEET_BUSY without People or Attendance writes', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.generateDailyCodes_(date);
++  backend.setLockAvailable(false);
++  assert.deepEqual(post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code,
++    device_token: 'busy-device', name: 'Ana Cruz'
++  }), { ok: false, error: 'SHEET_BUSY' });
++  assert.throws(() => backend.context.generateDailyCodes_(date), /SHEET_BUSY/);
++  assert.equal(backend.sheets.get('People').length, 1);
++  assert.equal(backend.sheets.get('Attendance').length, 1);
++  assert.equal(backend.sheets.get('Daily Codes').length, 2);
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/client-static.test.cjs ./tests/client-static.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/client-static.test.cjs	2026-11-24 13:58:52.277066700 +0800
++++ ./tests/client-static.test.cjs	2026-11-24 22:47:17.158810100 +0800
+@@ -34,3 +34,17 @@
+     assert.ok(client.includes(mapping), mapping);
+   }
+ });
++
++test('student submission errors are assertive atomic live alerts', () => {
++  assert.match(client, /<p\b(?=[^>]*\bid="scan-error")(?=[^>]*\brole="alert")(?=[^>]*\baria-live="assertive")(?=[^>]*\baria-atomic="true")[^>]*>/);
++});
++
++test('successful scans focus the success heading', () => {
++  assert.match(client, /<h2\b(?=[^>]*\bid="scan-success")(?=[^>]*\btabindex="-1")[^>]*>/);
++  assert.match(client, /document\.getElementById\(['"]scan-success['"]\)\.focus\(\)/);
++});
++
++test('formula-leading names and missing configuration have readable guidance', () => {
++  assert.match(client, /NAME_INVALID:\s*'[^']*(name|start)[^']*'/i);
++  assert.match(client, /SPREADSHEET_NOT_CONFIGURED:\s*'[^']*SPREADSHEET_ID[^']*Project Settings[^']*Script Properties[^']*'/);
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/core.test.cjs ./tests/core.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/core.test.cjs	2026-11-24 13:39:33.834090900 +0800
++++ ./tests/core.test.cjs	2026-11-24 22:46:38.048481400 +0800
+@@ -63,3 +63,29 @@
+   assert.equal(api('csvEscape_', 'Line one\nLine two'), '"Line one\nLine two"');
+   assert.equal(api('toCsv_', ['name', 'mode'], [['Ana', 'IN']]), '"name","mode"\n"Ana","IN"');
+ });
++
++test('rejects formula-leading names after normalization', () => {
++  for (const trigger of ['=', '+', '-', '@']) {
++    assert.throws(() => api('normalizeName_', `${trigger}SUM(A1)`), /NAME_INVALID/);
++    assert.throws(() => api('normalizeName_', ` \t${trigger}SUM(A1)\r\n`), /NAME_INVALID/);
++  }
++});
++
++test('keeps ordinary names, internal punctuation, and length rules', () => {
++  assert.equal(api('normalizeName_', "  Ana  O'Neil-Cruz, Jr.  "), "Ana O'Neil-Cruz, Jr.");
++  assert.equal(api('normalizeName_', '\tAna\nCruz\r'), 'Ana Cruz');
++  assert.equal(api('normalizeName_', 'x'.repeat(80)), 'x'.repeat(80));
++  assert.throws(() => api('normalizeName_', 'x'.repeat(81)), /NAME_TOO_LONG/);
++});
++
++test('neutralizes every formula-leading CSV field before quoting without changing the input', () => {
++  const dangerous = [
++    '=1+1', '+1', '-1', '@SUM(A1)', '\tvalue', '\rvalue', '\nvalue',
++    '  =1+1', '  +1', '  -1', '  @SUM(A1)', '  \tvalue', '  \rvalue', '  \nvalue'
++  ];
++  for (const value of dangerous) {
++    assert.equal(api('csvEscape_', value), `"'${value.replace(/"/g, '""')}"`, JSON.stringify(value));
++  }
++  assert.equal(api('csvEscape_', '  Ana Cruz'), '"  Ana Cruz"');
++  assert.equal(api('csvEscape_', 'Ana-Cruz'), '"Ana-Cruz"');
++});
+diff -ruN '--exclude=node_modules' ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/preview.test.cjs ./tests/preview.test.cjs
+--- ../.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-fix/tests/preview.test.cjs	2026-11-24 15:53:41.080991200 +0800
++++ ./tests/preview.test.cjs	2026-11-24 22:47:32.586553400 +0800
+@@ -119,21 +119,37 @@
+   });
+ });
+ 
+-test('preview scan handlers reject 101-character device tokens without writing attendance', async () => {
++test('preview status accepts a 101-character device token while record rejects it without writing', async () => {
+   await withServer(async base => {
+     const { date, record } = await generateForToday(base);
++    const deviceToken = 'x'.repeat(101);
+     const payload = {
+       date, mode: 'IN', code: record.in_code,
+-      device_token: 'x'.repeat(101), name: 'Ana Cruz'
++      device_token: deviceToken, name: 'Ana Cruz'
+     };
+-    const results = [];
+-    for (const action of ['scan.status', 'scan.record']) {
+-      results.push(await post(base, action, payload));
++    assert.deepEqual(await post(base, 'scan.status', payload), {
++      ok: true, date, mode: 'IN', name: null,
++      device_token: deviceToken, qr_created_at: record.created_at
++    });
++    assert.deepEqual(await post(base, 'scan.record', payload), {
++      ok: false, error: 'DEVICE_TOKEN_REQUIRED'
++    });
++    const list = await post(base, 'admin.list', { date });
++    assert.equal(list.totals.scans, 0);
++    assert.equal(list.totals.people, 0);
++  });
++});
++
++test('preview rejects formula-leading names without registering or recording them', async () => {
++  await withServer(async base => {
++    const { date, record } = await generateForToday(base);
++    for (const [index, trigger] of ['=', '+', '-', '@'].entries()) {
++      const result = await post(base, 'scan.record', {
++        date, mode: 'IN', code: record.in_code,
++        device_token: `formula-device-${index}`, name: `  ${trigger}SUM(A1)  `
++      });
++      assert.deepEqual(result, { ok: false, error: 'NAME_INVALID' });
+     }
+-    assert.deepEqual(results, [
+-      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' },
+-      { ok: false, error: 'DEVICE_TOKEN_REQUIRED' }
+-    ]);
+     const list = await post(base, 'admin.list', { date });
+     assert.equal(list.totals.scans, 0);
+     assert.equal(list.totals.people, 0);

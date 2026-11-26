@@ -1,0 +1,316 @@
+diff -ruN -x node_modules "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-4-fix-1/Client.html" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Client.html"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-4-fix-1/Client.html"	2026-11-24 14:20:19.000000000 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Client.html"	2026-11-24 14:54:10.268342400 +0800
+@@ -183,7 +183,12 @@
+   return qr.createDataURL(8, 4);
+ }
+ 
++let adminGenerateRequest_ = 0;
++let adminListRequest_ = 0;
++
+ async function renderAdminPage_() {
++  adminGenerateRequest_ += 1;
++  adminListRequest_ += 1;
+   const app = document.getElementById('app');
+   app.innerHTML = `
+     <section class="card admin-card">
+@@ -212,7 +217,11 @@
+   const searchInput = document.getElementById('attendance-search');
+   document.getElementById('generate-codes').addEventListener('click', () => generateCodes_(dateInput.value).catch(showAdminError_));
+   dateInput.addEventListener('change', () => {
+-    document.getElementById('qr-pair').hidden = true;
++    adminGenerateRequest_ += 1;
++    document.getElementById('generate-codes').disabled = false;
++    const qrPair = document.getElementById('qr-pair');
++    qrPair.hidden = true;
++    qrPair.innerHTML = '';
+     loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_);
+   });
+   searchInput.addEventListener('input', () => loadAttendance_(dateInput.value, searchInput.value).catch(showAdminError_));
+@@ -220,6 +229,13 @@
+   await loadAttendance_(dateInput.value, '').catch(showAdminError_);
+ }
+ 
++function clearAdminError_() {
++  const errorBox = document.getElementById('admin-error');
++  if (!errorBox) return;
++  errorBox.textContent = '';
++  errorBox.hidden = true;
++}
++
+ function showAdminError_(error) {
+   const errorBox = document.getElementById('admin-error');
+   if (!errorBox) return;
+@@ -232,40 +248,50 @@
+ 
+ async function generateCodes_(dateKey) {
+   const button = document.getElementById('generate-codes');
+-  const errorBox = document.getElementById('admin-error');
+-  if (!confirm('Generate new IN and OUT codes? The previous pair for this date will stop working.')) return;
++  if (button.disabled || !confirm('Generate new IN and OUT codes? The previous pair for this date will stop working.')) return;
++  const request = ++adminGenerateRequest_;
++  clearAdminError_();
+   button.disabled = true;
+-  errorBox.hidden = true;
+   try {
+     const result = await api('admin.generate', { date: dateKey });
++    if (request !== adminGenerateRequest_ || document.getElementById('admin-date').value !== dateKey) return;
+     if (!result.ok) throw new Error(result.error);
+     const record = result.record;
++    if (record.date !== dateKey) return;
+     document.getElementById('qr-pair').innerHTML = `
+       <article class="qr-card qr-in"><p class="eyebrow">Check in</p><img alt="Check-in QR code" src="${qrDataUrl_(record.in_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>
+       <article class="qr-card qr-out"><p class="eyebrow">Check out</p><img alt="Check-out QR code" src="${qrDataUrl_(record.out_url)}"><p>${escapeHtml_(record.date)}</p><small>Created ${escapeHtml_(record.created_at)}</small></article>`;
+     document.getElementById('qr-pair').hidden = false;
+     await loadAttendance_(dateKey, document.getElementById('attendance-search').value);
+   } catch (error) {
+-    showAdminError_(error);
++    if (request === adminGenerateRequest_ && document.getElementById('admin-date').value === dateKey) showAdminError_(error);
+   } finally {
+-    button.disabled = false;
++    if (request === adminGenerateRequest_) button.disabled = false;
+   }
+ }
+ 
+ async function loadAttendance_(dateKey, query) {
+-  const result = await api('admin.list', { date: dateKey, query });
+-  if (!result.ok) throw new Error(result.error);
+-  document.getElementById('attendance-totals').innerHTML = `
+-    <div><strong>${result.totals.scans}</strong><span>Scans</span></div>
+-    <div><strong>${result.totals.people}</strong><span>People</span></div>
+-    <div><strong>${result.totals.in}</strong><span>IN</span></div>
+-    <div><strong>${result.totals.out}</strong><span>OUT</span></div>`;
+-  document.getElementById('attendance-body').innerHTML = result.rows.length
+-    ? result.rows.map(row => `<tr><td>${escapeHtml_(row.scanned_at)}</td><td>${escapeHtml_(row.name)}</td><td><span class="mode mode-${row.mode === 'IN' ? 'in' : 'out'}">${escapeHtml_(row.mode)}</span></td></tr>`).join('')
+-    : '<tr><td colspan="3">No scans recorded for this date.</td></tr>';
++  const request = ++adminListRequest_;
++  clearAdminError_();
++  try {
++    const result = await api('admin.list', { date: dateKey, query });
++    if (request !== adminListRequest_ || document.getElementById('admin-date').value !== dateKey || document.getElementById('attendance-search').value !== query) return;
++    if (!result.ok) throw new Error(result.error);
++    document.getElementById('attendance-totals').innerHTML = `
++      <div><strong>${result.totals.scans}</strong><span>Scans</span></div>
++      <div><strong>${result.totals.people}</strong><span>People</span></div>
++      <div><strong>${result.totals.in}</strong><span>IN</span></div>
++      <div><strong>${result.totals.out}</strong><span>OUT</span></div>`;
++    document.getElementById('attendance-body').innerHTML = result.rows.length
++      ? result.rows.map(row => `<tr><td>${escapeHtml_(row.scanned_at)}</td><td>${escapeHtml_(row.name)}</td><td><span class="mode mode-${row.mode === 'IN' ? 'in' : 'out'}">${escapeHtml_(row.mode)}</span></td></tr>`).join('')
++      : '<tr><td colspan="3">No scans recorded for this date.</td></tr>';
++  } catch (error) {
++    if (request === adminListRequest_ && document.getElementById('admin-date').value === dateKey && document.getElementById('attendance-search').value === query) throw error;
++  }
+ }
+ 
+ async function downloadCsv_(dateKey) {
++  clearAdminError_();
+   const result = await api('admin.export', { date: dateKey });
+   if (!result.ok) throw new Error(result.error);
+   const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8' });
+diff -ruN -x node_modules "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-4-fix-1/tests/client-admin.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-admin.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-task-4-fix-1/tests/client-admin.test.cjs"	1970-01-01 08:00:00.000000000 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-admin.test.cjs"	2026-11-24 14:52:50.886640000 +0800
+@@ -0,0 +1,203 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++
++const client = fs.readFileSync(path.join(__dirname, '..', 'Client.html'), 'utf8');
++const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++
++function deferred() {
++  let resolve;
++  let reject;
++  const promise = new Promise((resolvePromise, rejectPromise) => {
++    resolve = resolvePromise;
++    reject = rejectPromise;
++  });
++  return { promise, resolve, reject };
++}
++
++function attendanceResult(date, name, scans) {
++  return {
++    ok: true,
++    totals: { scans, people: 1, in: scans, out: 0 },
++    rows: [{ scanned_at: '08:00', name, mode: 'IN' }]
++  };
++}
++
++function flush() {
++  return new Promise(resolve => setImmediate(resolve));
++}
++
++async function renderedAdmin(api) {
++  const elements = new Map();
++
++  class FakeElement {
++    constructor(id) {
++      this.id = id;
++      this.innerHTML = '';
++      this.textContent = '';
++      this.value = '';
++      this.hidden = false;
++      this.disabled = false;
++      this.listeners = new Map();
++    }
++
++    addEventListener(type, listener) {
++      this.listeners.set(type, listener);
++    }
++
++    dispatch(type) {
++      const listener = this.listeners.get(type);
++      if (listener) listener({ preventDefault() {} });
++    }
++
++    click() {}
++    remove() {}
++  }
++
++  for (const id of [
++    'app',
++    'admin-date',
++    'generate-codes',
++    'admin-error',
++    'qr-pair',
++    'attendance-search',
++    'attendance-totals',
++    'attendance-body',
++    'export-csv'
++  ]) {
++    elements.set(id, new FakeElement(id));
++  }
++  elements.get('admin-date').value = '2026-11-24';
++  elements.get('admin-error').hidden = true;
++  elements.get('qr-pair').hidden = true;
++
++  const document = {
++    getElementById(id) {
++      if (!elements.has(id)) elements.set(id, new FakeElement(id));
++      return elements.get(id);
++    },
++    addEventListener() {},
++    createElement() { return new FakeElement(); },
++    body: { appendChild() {} }
++  };
++  const context = vm.createContext({
++    console,
++    document,
++    window: {
++      qrcode() {
++        return {
++          addData(value) { this.value = value; },
++          make() {},
++          createDataURL() { return `data:image/png;base64,${this.value}`; }
++        };
++      }
++    },
++    confirm: () => true,
++    location: { search: '?page=admin' },
++    URLSearchParams,
++    Blob,
++    URL: { createObjectURL: () => 'blob:attendance', revokeObjectURL() {} },
++    setTimeout: callback => callback()
++  });
++  vm.runInContext(script, context, { filename: 'Client.html' });
++  context.api = api;
++  await context.renderAdminPage_();
++  return { context, elements };
++}
++
++test('a late generation response cannot redisplay QR cards for a previous date', async () => {
++  const generation = deferred();
++  const changedDateList = deferred();
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  context.api = action => action === 'admin.generate' ? generation.promise : changedDateList.promise;
++
++  const pendingGeneration = context.generateCodes_('2026-11-24');
++  elements.get('admin-date').value = '2026-11-25';
++  elements.get('admin-date').dispatch('change');
++  changedDateList.resolve(attendanceResult('2026-11-25', 'New date', 2));
++  await flush();
++
++  generation.resolve({
++    ok: true,
++    record: {
++      date: '2026-11-24',
++      created_at: '2026-11-24 07:00',
++      in_url: 'https://script.test/exec?page=scan&date=2026-11-24&mode=IN&code=old-in',
++      out_url: 'https://script.test/exec?page=scan&date=2026-11-24&mode=OUT&code=old-out'
++    }
++  });
++  await pendingGeneration;
++
++  assert.equal(elements.get('qr-pair').hidden, true);
++  assert.doesNotMatch(elements.get('qr-pair').innerHTML, /2026-11-24|old-in|old-out/);
++  assert.match(elements.get('attendance-body').innerHTML, /New date/);
++  assert.doesNotMatch(elements.get('attendance-body').innerHTML, /Initial/);
++});
++
++test('an older attendance response cannot overwrite a newer search result', async () => {
++  const requests = [];
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  context.api = () => {
++    const request = deferred();
++    requests.push(request);
++    return request.promise;
++  };
++
++  const olderRequest = context.loadAttendance_('2026-11-24', 'Ada');
++  elements.get('attendance-search').value = 'Luis';
++  elements.get('attendance-search').dispatch('input');
++  requests[1].resolve(attendanceResult('2026-11-24', 'Luis', 3));
++  await flush();
++  requests[0].resolve(attendanceResult('2026-11-24', 'Ada', 1));
++  await olderRequest;
++
++  assert.match(elements.get('attendance-body').innerHTML, /Luis/);
++  assert.doesNotMatch(elements.get('attendance-body').innerHTML, /Ada/);
++  assert.match(elements.get('attendance-totals').innerHTML, /<strong>3<\/strong>/);
++});
++
++test('an older attendance failure cannot resurface an error after a newer search succeeds', async () => {
++  const requests = [];
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++  context.api = () => {
++    const request = deferred();
++    requests.push(request);
++    return request.promise;
++  };
++
++  elements.get('attendance-search').value = 'Ada';
++  elements.get('attendance-search').dispatch('input');
++  elements.get('attendance-search').value = 'Luis';
++  elements.get('attendance-search').dispatch('input');
++  requests[1].resolve(attendanceResult('2026-11-24', 'Luis', 1));
++  await flush();
++  requests[0].reject(new Error('SHEET_BUSY'));
++  await flush();
++
++  assert.equal(elements.get('admin-error').hidden, true);
++  assert.match(elements.get('attendance-body').innerHTML, /Luis/);
++});
++
++test('starting list and export requests hides a recovered office error', async () => {
++  const listRequest = deferred();
++  const exportRequest = deferred();
++  const { context, elements } = await renderedAdmin(() => Promise.resolve(attendanceResult('2026-11-24', 'Initial', 1)));
++
++  elements.get('admin-error').textContent = 'Previous failure';
++  elements.get('admin-error').hidden = false;
++  context.api = () => listRequest.promise;
++  const pendingList = context.loadAttendance_('2026-11-24', '');
++  assert.equal(elements.get('admin-error').hidden, true);
++  listRequest.resolve(attendanceResult('2026-11-24', 'Recovered', 1));
++  await pendingList;
++
++  elements.get('admin-error').textContent = 'Previous failure';
++  elements.get('admin-error').hidden = false;
++  context.api = () => exportRequest.promise;
++  const pendingExport = context.downloadCsv_('2026-11-24');
++  assert.equal(elements.get('admin-error').hidden, true);
++  exportRequest.resolve({ ok: true, csv: 'Time,Name\n', filename: 'attendance-2026-11-24.csv' });
++  await pendingExport;
++});

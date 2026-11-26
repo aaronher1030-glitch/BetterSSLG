@@ -1,0 +1,288 @@
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/Client.html" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Client.html"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/Client.html"	2026-11-24 22:59:39.329374600 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Client.html"	2026-11-24 23:46:08.655745200 +0800
+@@ -47,6 +47,7 @@
+   NAME_INVALID: 'Please enter a name that does not start with =, +, -, or @.',
+   NAME_TOO_LONG: 'Please use a name of 80 characters or fewer.',
+   DEVICE_TOKEN_REQUIRED: 'This browser could not create a device token. Enable site storage and try again.',
++  DEVICE_TOKEN_INVALID: 'This browser’s saved device token is invalid. Clear site storage and try again.',
+   INVALID_REQUEST: 'This QR link is incomplete or invalid.',
+   CODE_NOT_FOUND: 'This code is not registered. Ask the SSLG office for today’s code.',
+   WRONG_DATE: 'This QR code belongs to a different date.',
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/Code.gs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Code.gs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/Code.gs"	2026-11-24 13:47:29.919193500 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Code.gs"	2026-11-24 23:45:41.633812500 +0800
+@@ -99,7 +99,8 @@
+   const validation = validateScan_(params, record, new Date());
+   if (!validation.ok) return validation;
+   const deviceToken = String(params.device_token || '');
+-  if (!deviceToken) return { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++  const tokenError = deviceTokenError_(deviceToken, false);
++  if (tokenError) return { ok: false, error: tokenError };
+   const person = findPersonByToken_(deviceToken);
+   return {
+     ok: true,
+@@ -119,7 +120,8 @@
+     const validation = validateScan_(params, record, new Date());
+     if (!validation.ok) return validation;
+     const deviceToken = String(params.device_token || '');
+-    if (!deviceToken || deviceToken.length > 100) return { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++    const tokenError = deviceTokenError_(deviceToken, true);
++    if (tokenError) return { ok: false, error: tokenError };
+     const now = new Date();
+     const existing = findPersonByToken_(deviceToken);
+     const name = normalizeName_(existing ? existing.name : params.name);
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/Core.gs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Core.gs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/Core.gs"	2026-11-24 22:59:18.257700500 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/Core.gs"	2026-11-24 23:44:42.921029300 +0800
+@@ -12,6 +12,12 @@
+   return name;
+ }
+ 
++function deviceTokenError_(deviceToken, forWrite) {
++  if (!deviceToken || (forWrite && deviceToken.length > 100)) return 'DEVICE_TOKEN_REQUIRED';
++  if (/^[ \t\r\n]*[=+\-@\t\r\n]/.test(deviceToken)) return 'DEVICE_TOKEN_INVALID';
++  return null;
++}
++
+ function manilaParts_(date) {
+   const parts = new Intl.DateTimeFormat('en-CA', {
+     timeZone: SSLG_ATTENDANCE_TIME_ZONE,
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/preview/server.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/preview/server.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/preview/server.cjs"	2026-11-24 22:58:58.344056400 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/preview/server.cjs"	2026-11-24 23:45:57.586923300 +0800
+@@ -54,7 +54,8 @@
+           if (!validation.ok) result = validation;
+           else {
+             const deviceToken = String(payload.device_token || '');
+-            if (!deviceToken || (action === 'scan.record' && deviceToken.length > 100)) result = { ok: false, error: 'DEVICE_TOKEN_REQUIRED' };
++            const tokenError = core.deviceTokenError_(deviceToken, action === 'scan.record');
++            if (tokenError) result = { ok: false, error: tokenError };
+             else {
+               const person = state.people.get(deviceToken);
+               if (action === 'scan.status') {
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/tests/backend.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/backend.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/tests/backend.test.cjs"	2026-11-24 22:57:50.575472000 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/backend.test.cjs"	2026-11-24 23:41:36.718814300 +0800
+@@ -3,8 +3,13 @@
+ const fs = require('node:fs');
+ const path = require('node:path');
+ const vm = require('node:vm');
++const { createPreviewServer } = require('../preview/server.cjs');
+ 
+ const MANILA_TEST_NOW = '2026-11-24T12:00:00.000Z';
++const DANGEROUS_DEVICE_TOKENS = ['=', '+', '-', '@', '\t', '\r', '\n'].flatMap(trigger => [
++  `${trigger}device`,
++  `  ${trigger}device`
++]);
+ class FixedDate extends Date {
+   constructor(...args) {
+     super(...(args.length ? args : [MANILA_TEST_NOW]));
+@@ -21,6 +26,7 @@
+   let baseUrl = 'https://script.test/exec';
+   let lockAvailable = true;
+   const requestedTemplates = [];
++  const writes = new Map();
+ 
+   function makeSheet(name) {
+     if (!sheets.has(name)) sheets.set(name, []);
+@@ -29,9 +35,15 @@
+       getLastRow: () => rows.length,
+       getRange: (row, column, count) => ({
+         getValues: () => rows.slice(row - 1, row - 1 + count),
+-        setValues: values => { rows.splice(row - 1, count, ...values); }
++        setValues: values => {
++          writes.set(name, (writes.get(name) || 0) + 1);
++          rows.splice(row - 1, count, ...values);
++        }
+       }),
+-      appendRow: row => rows.push(row),
++      appendRow: row => {
++        writes.set(name, (writes.get(name) || 0) + 1);
++        rows.push(row);
++      },
+       getLastColumn: () => rows[0] ? rows[0].length : 0,
+       getFrozenRows: () => 0,
+       setFrozenRows: () => {}
+@@ -65,6 +77,7 @@
+   return {
+     context,
+     sheets,
++    writes,
+     requestedTemplates,
+     setLockAvailable(value) { lockAvailable = value; }
+   };
+@@ -75,10 +88,52 @@
+   return JSON.parse(output.text);
+ }
+ 
++async function withPreviewServer(run) {
++  const server = createPreviewServer();
++  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
++  const base = `http://127.0.0.1:${server.address().port}`;
++  try { await run(base); } finally {
++    const closed = new Promise(resolve => server.close(resolve));
++    server.closeAllConnections();
++    await closed;
++  }
++}
++
++async function previewPost(base, action, payload) {
++  const response = await fetch(`${base}/api/${action}`, {
++    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
++  });
++  return response.json();
++}
++
+ function today_(backend) {
+-  return backend.context.manilaDateKey_(new Date());
++  return backend.context.manilaDateKey_(new backend.context.Date());
+ }
+ 
++test('backend test requests stay on 2026-11-24 when the host clock advances', t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-26T02:00:00.000Z') });
++  const hostDate = new Intl.DateTimeFormat('en-CA', {
++    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++  }).format(new Date());
++  assert.equal(hostDate, '2026-11-26');
++
++  const backend = loadBackend();
++  const date = today_(backend);
++  assert.equal(date, '2026-11-24');
++  const generated = backend.context.generateDailyCodes_(date);
++  const status = post(backend, 'scan.status', {
++    date, mode: 'IN', code: generated.in_code, device_token: 'clock-device'
++  });
++  assert.equal(status.ok, true);
++  assert.equal(status.date, '2026-11-24');
++  const recorded = post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code, device_token: 'clock-device', name: 'Ana Cruz'
++  });
++  assert.equal(recorded.ok, true);
++  assert.equal(recorded.event.date, '2026-11-24');
++  assert.equal(recorded.event.scanned_at, '2026-11-24T20:00:00+08:00');
++});
++
+ test('creates the documented Sheet tabs and headers', () => {
+   const backend = loadBackend();
+   backend.context.ensureSchema_();
+@@ -198,6 +253,95 @@
+   assert.equal(backend.sheets.get('Attendance').length, 1);
+ });
+ 
++test('backend and preview reject dangerous device tokens with matching errors and zero writes', async () => {
++  const backend = loadBackend();
++  const backendDate = today_(backend);
++  const backendCodes = backend.context.generateDailyCodes_(backendDate);
++  const peopleBefore = JSON.parse(JSON.stringify(backend.sheets.get('People')));
++  const attendanceBefore = JSON.parse(JSON.stringify(backend.sheets.get('Attendance')));
++  const peopleWritesBefore = backend.writes.get('People');
++  const attendanceWritesBefore = backend.writes.get('Attendance');
++
++  await withPreviewServer(async base => {
++    const previewDate = new Intl.DateTimeFormat('en-CA', {
++      timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
++    }).format(new Date());
++    const previewGenerated = await previewPost(base, 'admin.generate', { date: previewDate });
++    assert.equal(previewGenerated.ok, true);
++
++    for (const action of ['scan.status', 'scan.record']) {
++      const cases = [
++        ...DANGEROUS_DEVICE_TOKENS.map(device_token => ({ device_token, error: 'DEVICE_TOKEN_INVALID' })),
++        { device_token: '', error: 'DEVICE_TOKEN_REQUIRED' },
++        ...(action === 'scan.record' ? [{ device_token: 'x'.repeat(101), error: 'DEVICE_TOKEN_REQUIRED' }] : [])
++      ];
++      for (const { device_token, error } of cases) {
++        const backendResult = post(backend, action, {
++          date: backendDate, mode: 'IN', code: backendCodes.in_code, device_token, name: 'Ana Cruz'
++        });
++        const previewResult = await previewPost(base, action, {
++          date: previewDate, mode: 'IN', code: previewGenerated.record.in_code, device_token, name: 'Ana Cruz'
++        });
++        assert.deepEqual(backendResult, { ok: false, error }, `${action} backend ${JSON.stringify(device_token)}`);
++        assert.deepEqual(previewResult, backendResult, `${action} preview ${JSON.stringify(device_token)}`);
++      }
++    }
++
++    const listed = await previewPost(base, 'admin.list', { date: previewDate, query: '' });
++    assert.deepEqual(listed.totals, { scans: 0, people: 0, in: 0, out: 0 });
++  });
++
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('People'))), peopleBefore);
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('Attendance'))), attendanceBefore);
++  assert.equal(backend.writes.get('People'), peopleWritesBefore);
++  assert.equal(backend.writes.get('Attendance'), attendanceWritesBefore);
++});
++
++test('backend preserves safe device tokens exactly and keeps the 100/101 character boundaries', () => {
++  const backend = loadBackend();
++  const date = today_(backend);
++  const generated = backend.context.generateDailyCodes_(date);
++  const spacedToken = '  safe-device  ';
++  const recorded = post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code, device_token: spacedToken, name: 'Ana Cruz'
++  });
++  assert.equal(recorded.ok, true);
++  assert.equal(recorded.event.device_token, spacedToken);
++  assert.equal(backend.sheets.get('People')[1][0], spacedToken);
++  const recognized = post(backend, 'scan.status', {
++    date, mode: 'OUT', code: generated.out_code, device_token: spacedToken
++  });
++  assert.equal(recognized.name, 'Ana Cruz');
++  assert.equal(recognized.device_token, spacedToken);
++
++  const hundredCharacterToken = 'x'.repeat(100);
++  const hundred = post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code, device_token: hundredCharacterToken, name: 'Luis Santos'
++  });
++  assert.equal(hundred.ok, true);
++  assert.equal(hundred.event.device_token, hundredCharacterToken);
++
++  const peopleBefore = JSON.parse(JSON.stringify(backend.sheets.get('People')));
++  const attendanceBefore = JSON.parse(JSON.stringify(backend.sheets.get('Attendance')));
++  const peopleWritesBefore = backend.writes.get('People');
++  const attendanceWritesBefore = backend.writes.get('Attendance');
++  const hundredOneCharacterToken = 'y'.repeat(101);
++  const status = post(backend, 'scan.status', {
++    date, mode: 'IN', code: generated.in_code, device_token: hundredOneCharacterToken
++  });
++  assert.deepEqual(status, {
++    ok: true, date, mode: 'IN', name: null,
++    device_token: hundredOneCharacterToken, qr_created_at: generated.created_at
++  });
++  assert.deepEqual(post(backend, 'scan.record', {
++    date, mode: 'IN', code: generated.in_code, device_token: hundredOneCharacterToken, name: 'Maria Clara'
++  }), { ok: false, error: 'DEVICE_TOKEN_REQUIRED' });
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('People'))), peopleBefore);
++  assert.deepEqual(JSON.parse(JSON.stringify(backend.sheets.get('Attendance'))), attendanceBefore);
++  assert.equal(backend.writes.get('People'), peopleWritesBefore);
++  assert.equal(backend.writes.get('Attendance'), attendanceWritesBefore);
++});
++
+ test('neutralizes dangerous legacy CSV fields without changing stored rows', () => {
+   const backend = loadBackend();
+   const date = today_(backend);
+diff -ru '--exclude=node_modules' "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/tests/client-static.test.cjs" "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-static.test.cjs"
+--- "C:/Users/Ma Christine/Downloads/SSLG MEMOS/.superpowers/sdd/2026-11-24-sslg-qr-attendance/before-final-security-fix/tests/client-static.test.cjs"	2026-11-24 22:47:17.158810100 +0800
++++ "C:/Users/Ma Christine/Downloads/SSLG MEMOS/SSLG Attendance App/tests/client-static.test.cjs"	2026-11-24 23:42:07.524067900 +0800
+@@ -2,6 +2,7 @@
+ const assert = require('node:assert/strict');
+ const fs = require('node:fs');
+ const path = require('node:path');
++const vm = require('node:vm');
+ 
+ const root = path.join(__dirname, '..');
+ const client = fs.readFileSync(path.join(root, 'Client.html'), 'utf8');
+@@ -48,3 +49,12 @@
+   assert.match(client, /NAME_INVALID:\s*'[^']*(name|start)[^']*'/i);
+   assert.match(client, /SPREADSHEET_NOT_CONFIGURED:\s*'[^']*SPREADSHEET_ID[^']*Project Settings[^']*Script Properties[^']*'/);
+ });
++
++test('invalid device tokens have readable client guidance', () => {
++  const script = client.match(/<script>([\s\S]*?)<\/script>/)[1];
++  const context = vm.createContext({ document: { addEventListener() {} } });
++  vm.runInContext(script, context, { filename: 'Client.html' });
++  const message = context.errorMessage_({ message: 'DEVICE_TOKEN_INVALID' });
++  assert.match(message, /device token/i);
++  assert.match(message, /clear site storage/i);
++});

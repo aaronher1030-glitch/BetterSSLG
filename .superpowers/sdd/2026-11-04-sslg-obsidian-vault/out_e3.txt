@@ -1,0 +1,65 @@
+E3a. page counts (corrected): object-scan / form-feed / method
+   NOM_SSLG_2026_004.pdf                                          (1, 1, 'obj')
+   AP_SSLG_2026_007_AnnexD.pdf                                    (14, 14, 'obj')
+   OM_SSLG_2026_002.docx.pdf                                      (1, 1, 'obj')
+   OM_SSLG_2026_002.pdf                                           (18, 18, 'obj')
+   OM_SSLG_2026_001.docx.pdf                                      (9, 9, 'obj')
+   OM_SSLG_2026_001.pdf                                           (8, 8, 'obj')
+   Memorandum-OM-NFSSLG-2026-001_signed-2.pdf                     (16, 16, 'obj')
+   OM-DFSSLG-2026-003-1.pdf                                       (2, 2, 'obj')
+   OM-DFSSLG-2026-007-1.pdf                                       (6, 6, 'obj')
+   OM-DFSSLG-2026-010.pdf                                         (17, 17, 'obj')
+   OM-DFSSLG-2026-010 (1).pdf                                     (17, 17, 'obj')
+   OM_SSLG_2026_002 (1).pdf                                       (18, 18, 'obj')
+   Memorandum-OM-NFSSLG-2026-001_signed-2-merged.pdf              (17, 17, 'obj')
+   Memorandum-OM-NFSSLG-2026-001_signed-2-pages-deleted-compressed.pdf (2, 2, 'formfeed')
+   OM_SSLG_2026_001 (14).docx.pdf                                 (9, 9, 'obj')
+   OM_SSLG_2026_001.docx (1).pdf                                  (9, 9, 'obj')
+   OM_SSLG_2026_002..docx.pdf                                     (2, 2, 'obj')
+   OM_SSLG_2026_002.POST.docx-merged.pdf                          (17, 17, 'obj')
+   OM_SSLG_2026_002.POST.docx.pdf                                 (1, 1, 'obj')
+   OM-DFSSLG-2026-003-1.pdf                                       (2, 2, 'obj')
+
+E3b. all 'identical text' style claims, longest-name regex
+   claims: 12 violations: 0 []
+
+E3c. the three 9-page PDFs of OM_SSLG_2026_001 (ledger says (14).docx.pdf == .docx.pdf, ' (1).pdf differs)
+   OM_SSLG_2026_001.docx.pdf: nonblank lines=137
+   OM_SSLG_2026_001 (14).docx.pdf: nonblank lines=137
+   OM_SSLG_2026_001.docx (1).pdf: nonblank lines=136
+   (14).docx.pdf == .docx.pdf : True
+   ' (1).pdf == .docx.pdf    : False
+   similarity ratio .docx.pdf vs ' (1).pdf: 0.967
+      delete ['Prepared by:', 'RHIAN JADE L. CASTRO SSLG President'] || []
+      replace ['BENIGNO S. AQUINO NATIONAL HIGH SCHOOL', 'Learner Government Coordinating Council (LGCC)'] || ['BENIGNO S. AQUINO NATIONAL HIGH SCHOOL Learner Government Coordinating Council (LGCC)', 'School Year 2026-2027', 'Prepared by:']
+      delete ['School Year 2026-2027'] || []
+
+E3d. 6-note content truthfulness spot check
+   [om-sslg-2026-001-may25] source=OM_SSLG_2026_001.docx frontmatter date=2026-05-25 event=None id='OM SSLG No. 001, s. 2026' status=final
+      FOUND  /25(?:st)?\s+May\s+2026|MAY 25, 2026|May 25, 2026/ -> May 25, 2026
+      ABSENT /OM SSLG No\. 001/ -> 
+      FOUND  /Rhian Jade L\. Castro/ -> RHIAN JADE L. CASTRO
+      ABSENT /LGCC Chairperson/ -> 
+      FOUND  /SSLG President/ -> SSLG President
+      FOUND  /OM[- ]DFSSLG[- ]2026[- ]002/ -> OM-DFSSLG-2026-002
+   [om-sslg-2026-001-may27] source=OM_SSLG_2026_001 (8).docx frontmatter date=2026-05-27 event=None id='OM SSLG No. 001, s. 2026' status=final
+      FOUND  /27(?:th)?\s+May\s+2026|MAY 27, 2026|May 27, 2026/ -> May 27, 2026
+      ABSENT /OM SSLG No\. 001/ -> 
+      FOUND  /Chloe Danielle L\. David/ -> Chloe Danielle L. David
+      FOUND  /Kean Albert J\. Pineda/ -> Kean Albert J. Pineda
+   [ap-sslg-2026-007] source=AP_SSLG_2026_007_AnnexD_proofread.docx frontmatter date=None event=2026-11-17 id='AP_SSLG_2026_007' status=final
+      ABSENT /AP_SSLG_2026_007/ -> 
+      FOUND  /November 17|17 ?- ?18 ?|November 1[78]/ -> November 17
+      FOUND  /National Students.{0,3} Day/ -> National Students’ Day
+   [acr-sslg-2026-006] source=ACR_SSLG_2026_006.docx frontmatter date=None event=2026-07-22 id='ACR_SSLG_2026_006' status=final
+      ABSENT /ACR_SSLG_2026_006/ -> 
+      FOUND  /July 22|22 ?2026/ -> July 22
+      FOUND  /Induction/ -> Induction
+   [om-sslg-ia-2026-001] source=SSLG_Governance_Memorandum_OM-SSLG-IA-2026-001.docx frontmatter date=2026-06-22 event=None id='OM-SSLG-IA-2026-001' status=final
+      FOUND  /OM-SSLG-IA-2026-001/ -> OM-SSLG-IA-2026-001
+      FOUND  /June 2[0-9], 2026|22 ?June ?2026|JUNE 22, 2026/ -> June 22, 2026
+      FOUND  /\[School Name\]/ -> [School Name]
+   [om-nfsslg-2026-001] source=Memorandum-OM-NFSSLG-2026-001_signed-2.pdf frontmatter date=2026-08-25 event=None id='OM-NFSSLG-2026-001' status=signed
+      ABSENT /OM-NFSSLG-2026-001/ -> 
+      ABSENT /August 25|25 August 2026|AUGUST 25, 2026/ -> 
+      ABSENT /September 4|4 September 2026/ -> 

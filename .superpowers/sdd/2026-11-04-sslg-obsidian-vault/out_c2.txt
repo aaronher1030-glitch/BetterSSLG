@@ -1,0 +1,62 @@
+C2a. basenames that map to >1 manifest current_path: 2
+    om-dfsslg-2026-003-1.pdf -> ['04 External Memoranda/Sources/OM-DFSSLG-2026-003-1.pdf', '90 Archive/Staging/OM-DFSSLG-2026-003-1.pdf']
+    om_sslg_2026_002..docx -> ['90 Archive/Revisions/OM_SSLG_2026_002..docx', '90 Archive/Staging/OM_SSLG_2026_002..docx']
+
+C2b. wikilink targets that are BARE basenames (Obsidian 'shortest path' links)
+   count: 2
+    ('.superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-3-report.md', '...pdf', 0, '')
+    ('.superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-3-review.md', '...pdf', 0, '')
+
+C2c. prose (frontmatter stripped, links removed) that still names an original filename
+   mentions: 254 Counter({'resolvable-as-bare': 236, 'AMBIGUOUS': 18})
+   files with mentions: 39
+       196 .superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-2-review-package.md
+       8 .superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-3-review-package.md
+       4 .superpowers/sdd/2026-11-04-sslg-obsidian-vault/progress.md
+       4 .superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-2-review.md
+       3 .superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-2-report.md
+       2 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (25 May 2026).md
+       2 docs/superpowers/plans/2026-11-04-sslg-obsidian-vault.md
+       2 02 Activities/National Students Day 2026/Notes/Activity Proposal AP-SSLG-2026-007 - 2026 National Students' Day Celebration.md
+       2 02 Activities/Crafting of the SSLG General Plan of Action 2026/Notes/Notice of Meeting NOM-SSLG-2026-004 - SSLG General Plan of Action Presentation.md
+       2 .superpowers/sdd/2026-11-04-sslg-obsidian-vault/task-2-brief.md
+       1 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (27 May 2026).md
+       1 03 Governance/Memorandum OM-SSLG-IA-2026-001 - Governance Output Standardization, Digital Archiving and Monitoring Policy.md
+   sample:
+       ('03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (25 May 2026).md', 'OM_SSLG_2026_001.docx', 'resolvable-as-bare')
+       ('03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (25 May 2026).md', 'OM_SSLG_2026_001.pdf', 'resolvable-as-bare')
+       ('03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (27 May 2026).md', 'OM_SSLG_2026_001.docx', 'resolvable-as-bare')
+       ('03 Governance/Memorandum OM-SSLG-IA-2026-001 - Governance Output Standardization, Digital Archiving and Monitoring Policy.md', 'SSLG_Governance_Memorandum_OM-SSLG-IA-2026-001.docx', 'resolvable-as-bare')
+       ('04 External Memoranda/Cluster Federation Memorandum OM-CFSSLG-2026-003 - Nationwide Online Survey on Digital Device Use.md', 'OM-CFSSLG-2026-003.docx', 'resolvable-as-bare')
+       ('04 External Memoranda/Division Memorandum OM-DFSSLG-2026-003 - LGCC Mobilization for Brigada Eskwela 2026.md', 'OM-DFSSLG-2026-003-1.pdf', 'AMBIGUOUS')
+       ('04 External Memoranda/Division Memorandum OM-DFSSLG-2026-007 - Campus Journalism and SSLG Partnership.md', 'OM-DFSSLG-2026-007-1.pdf', 'resolvable-as-bare')
+       ('04 External Memoranda/Division Memorandum OM-DFSSLG-2026-010 - Nationwide Online Survey on Digital Device Use in Schools.md', 'OM-DFSSLG-2026-010.pdf', 'resolvable-as-bare')
+       ('04 External Memoranda/National Federation Memorandum OM-NFSSLG-2026-001 - Nationwide Online Survey on Digital Device Use in Schools.md', 'Memorandum-OM-NFSSLG-2026-001_signed-2.pdf', 'resolvable-as-bare')
+       ('docs/superpowers/plans/2026-11-04-sslg-obsidian-vault.md', 'AP_SSLG_2026_001.docx', 'resolvable-as-bare')
+       ('docs/superpowers/plans/2026-11-04-sslg-obsidian-vault.md', 'AP_SSLG_2026_001.docx', 'resolvable-as-bare')
+       ("02 Activities/World Teachers Day 2026/Notes/Activity Proposal AP-SSLG-2026-006 - 2026 World Teachers' Day Celebration.md", 'AP_SSLG_2026_006_revised.docx', 'resolvable-as-bare')
+
+C2d. references to pre-migration root paths (stale originals)
+   stale original-path mentions outside Archive Index: 885
+    ('01 Dashboards/Review Queue.md', 'AP_SSLG_2026_006 (3).docx')
+    ('01 Dashboards/Review Queue.md', 'AP_SSLG_2026_006 (3).docx')
+    ('01 Dashboards/Review Queue.md', 'OM_SSLG_2026_002 (1).docx')
+    ('01 Dashboards/Review Queue.md', 'OM_SSLG_2026_002 (2).docx')
+    ('01 Dashboards/Review Queue.md', 'OM_SSLG_2026_002 (7).docx')
+    ('01 Dashboards/Review Queue.md', 'OM_SSLG_2026_002 (8).docx')
+    ('01 Dashboards/Review Queue.md', 'OM_SSLG_2026_002.docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md', 'OM_SSLG_2026_001 (5).docx')
+    ('03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (25 May 2026).md', 'OM_SSLG_2026_001 (1).docx')
+
+C2e. records with no activity: filing location vs spec 05 General Records
+    om-dfsslg-2026-007 memorandum | 04 External Memoranda/Division Memorandum OM-DFSSLG-2026-007 - Campus Journalism and SSLG Partnership.md
+    om-sslg-2026-001-draft-vp memorandum | 03 Governance/Draft Memorandum - Standing Committee Distribution (Number and Date Blank).md
+    om-sslg-2026-001-may25 memorandum | 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (25 May 2026).md
+    om-sslg-2026-001-may27 memorandum | 03 Governance/Memorandum No. 001, s. 2026 - Establishment of LGCC Standing Committees (27 May 2026).md
+    om-sslg-ia-2026-001 governance-policy | 03 Governance/Memorandum OM-SSLG-IA-2026-001 - Governance Output Standardization, Digital Archiving and Monitoring Policy.md
