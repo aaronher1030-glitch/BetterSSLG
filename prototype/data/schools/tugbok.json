@@ -1,0 +1,53 @@
+{
+  "slug": "tugbok",
+  "status": "demo",
+  "verified_on": null,
+  "updated": "2026-10-28",
+  "school": {
+    "name": "Tugbok National High School",
+    "short": "TNHS",
+    "school_id": "304415",
+    "division": "Davao City",
+    "region": "XI",
+    "region_name": "Davao Region",
+    "cluster": "IX",
+    "address": "Tugbok, Davao City"
+  },
+  "sslg": {
+    "term": "2026-2027",
+    "adviser": { "name": null, "position": "SSLG Adviser", "consent": false },
+    "contact": null,
+    "facebook": null,
+    "officers": [
+      { "role": "President", "grade": null, "name": null, "consent": false },
+      { "role": "Vice President", "grade": null, "name": null, "consent": false },
+      { "role": "Secretary", "grade": null, "name": null, "consent": false },
+      { "role": "Treasurer", "grade": null, "name": null, "consent": false },
+      { "role": "Public Information Officer", "grade": null, "name": null, "consent": false }
+    ]
+  },
+  "activities": [
+    { "id": "AP_SSLG_2026_001", "title": "Brigada Eskwela 2026", "date": "2026-06-03", "status": "completed", "kind": "Program",
+      "summary": "Repair and repainting of eight classrooms with parent volunteers.", "photo": null },
+    { "id": "AP_SSLG_2026_002", "title": "Indigenous Peoples Cultural Day", "date": "2026-08-09", "status": "completed", "kind": "Ceremony",
+      "summary": "Celebration of the school's IP learners, with dance, music and a heritage exhibit.", "photo": null },
+    { "id": "AP_SSLG_2026_003", "title": "Project Kalinga", "date": "2026-09", "status": "ongoing", "kind": "Project",
+      "summary": "Monthly feeding and school-supplies drive for identified learners.", "photo": null }
+  ],
+  "documents": [
+    { "number": "001", "series": 2026, "type": "Memorandum", "direction": "issued",
+      "title": "Creation of the Club Accreditation Committee", "date": "2026-07-15" }
+  ],
+  "finance": {
+    "frequency": "Quarterly",
+    "reports": []
+  },
+  "clubs": [
+    { "name": "Science Club", "cluster": "A" },
+    { "name": "Mathematics Club", "cluster": "A" },
+    { "name": "Lumad Culture Club", "cluster": "B" },
+    { "name": "Sports Club", "cluster": "C" },
+    { "name": "YES-O", "cluster": "D" },
+    { "name": "Barkada Kontra Droga", "cluster": "D" }
+  ]
+}

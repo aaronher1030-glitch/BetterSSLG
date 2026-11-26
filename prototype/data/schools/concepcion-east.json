@@ -1,0 +1,67 @@
+{
+  "slug": "concepcion-east",
+  "status": "demo",
+  "verified_on": null,
+  "updated": "2026-11-21",
+  "school": {
+    "name": "Concepcion East National High School",
+    "short": "CENHS",
+    "school_id": "300982",
+    "division": "Tarlac Province",
+    "region": "III",
+    "region_name": "Central Luzon",
+    "cluster": "IV",
+    "address": "Concepcion, Tarlac"
+  },
+  "sslg": {
+    "term": "2026-2027",
+    "adviser": { "name": null, "position": "SSLG Adviser", "consent": false },
+    "contact": null,
+    "facebook": null,
+    "officers": [
+      { "role": "President", "grade": null, "name": null, "consent": false },
+      { "role": "Vice President", "grade": null, "name": null, "consent": false },
+      { "role": "Secretary", "grade": null, "name": null, "consent": false },
+      { "role": "Treasurer", "grade": null, "name": null, "consent": false },
+      { "role": "Auditor", "grade": null, "name": null, "consent": false },
+      { "role": "Public Information Officer", "grade": null, "name": null, "consent": false },
+      { "role": "Grade 10 Representative", "grade": 10, "name": null, "consent": false },
+      { "role": "Grade 12 Representative", "grade": 12, "name": null, "consent": false }
+    ]
+  },
+  "activities": [
+    { "id": "AP_SSLG_2026_001", "title": "Brigada Eskwela 2026", "date": "2026-06-01", "status": "completed", "kind": "Program",
+      "summary": "Five-day clean-up and repair drive with parents, alumni and barangay partners.", "photo": null },
+    { "id": "AP_SSLG_2026_002", "title": "SSLG General Assembly", "date": "2026-08-12", "status": "completed", "kind": "Meeting",
+      "summary": "Presentation of the General Plan of Action and the first quarter financial report.", "photo": null },
+    { "id": "AP_SSLG_2026_003", "title": "Project Liwanag: Reading Corner", "date": "2026-09", "status": "ongoing", "kind": "Project",
+      "summary": "Solar-lit reading corner built with the English Club and the barangay council.", "photo": null },
+    { "id": "AP_SSLG_2026_004", "title": "Teachers' Day 2026", "date": "2026-10-05", "status": "completed", "kind": "Ceremony",
+      "summary": "Tribute program for teaching and non-teaching personnel.", "photo": null },
+    { "id": "AP_SSLG_2026_005", "title": "Intramurals 2026", "date": "2026-10-21", "status": "completed", "kind": "Competition",
+      "summary": "Four-day sports competition, with cluster-based cheering and a clean-up rotation.", "photo": null }
+  ],
+  "documents": [
+    { "number": "001", "series": 2026, "type": "Memorandum", "direction": "issued",
+      "title": "Composition of the Learner Government Coordinating Council", "date": "2026-06-08" },
+    { "number": "OM-DFSSLG-2026-007", "series": 2026, "type": "Division Memorandum", "direction": "received",
+      "title": "Campus Journalism and SSLG Partnership", "date": "2026-07-10" }
+  ],
+  "finance": {
+    "frequency": "Quarterly",
+    "reports": [
+      { "period": "Quarter 1, SY 2026-2027", "published": "2026-10-05", "type": "Financial Report" }
+    ]
+  },
+  "clubs": [
+    { "name": "Mathematics Club", "cluster": "A" },
+    { "name": "Science Club", "cluster": "A" },
+    { "name": "English Club", "cluster": "A" },
+    { "name": "Glee Club", "cluster": "B" },
+    { "name": "Folk Dance Troupe", "cluster": "B" },
+    { "name": "Sports Club", "cluster": "C" },
+    { "name": "MAPEH Club", "cluster": "C" },
+    { "name": "YES-O", "cluster": "D" },
+    { "name": "Red Cross Youth", "cluster": "D" }
+  ]
+}

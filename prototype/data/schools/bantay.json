@@ -1,0 +1,64 @@
+{
+  "slug": "bantay",
+  "status": "demo",
+  "verified_on": null,
+  "updated": "2026-11-21",
+  "school": {
+    "name": "Bantay National High School",
+    "short": "BNHS",
+    "school_id": "300117",
+    "division": "Ilocos Sur",
+    "region": "I",
+    "region_name": "Ilocos Region",
+    "cluster": "I",
+    "address": "Bantay, Ilocos Sur"
+  },
+  "sslg": {
+    "term": "2026-2027",
+    "adviser": { "name": null, "position": "SSLG Adviser", "consent": false },
+    "contact": null,
+    "facebook": null,
+    "officers": [
+      { "role": "President", "grade": null, "name": null, "consent": false },
+      { "role": "Vice President", "grade": null, "name": null, "consent": false },
+      { "role": "Secretary", "grade": null, "name": null, "consent": false },
+      { "role": "Treasurer", "grade": null, "name": null, "consent": false },
+      { "role": "Auditor", "grade": null, "name": null, "consent": false },
+      { "role": "Business Manager", "grade": null, "name": null, "consent": false }
+    ]
+  },
+  "activities": [
+    { "id": "AP_SSLG_2026_001", "title": "Brigada Eskwela 2026", "date": "2026-06-04", "status": "completed", "kind": "Program",
+      "summary": "Community clean-up and classroom repair drive.", "photo": null },
+    { "id": "AP_SSLG_2026_002", "title": "Ilocano Heritage Week", "date": "2026-09-12", "status": "completed", "kind": "Program",
+      "summary": "Inabel weaving demonstration, kundiman night and local food fair.", "photo": null },
+    { "id": "AP_SSLG_2026_003", "title": "Tree Planting for Watershed Protection", "date": "2026-10-24", "status": "completed", "kind": "Program",
+      "summary": "Three hundred seedlings planted with the municipal environment office.", "photo": null },
+    { "id": "AP_SSLG_2026_004", "title": "School-Based Feeding Program Turnover", "date": "2026-11-14", "status": "completed", "kind": "Program",
+      "summary": "Turnover of the SSLG-funded feeding program for the second quarter.", "photo": null }
+  ],
+  "documents": [
+    { "number": "001", "series": 2026, "type": "Memorandum", "direction": "issued",
+      "title": "Guidelines on the Use of SSLG Funds", "date": "2026-06-18" },
+    { "number": "002", "series": 2026, "type": "Resolution", "direction": "issued",
+      "title": "Support for the Municipal Watershed Reforestation Program", "date": "2026-10-01" }
+  ],
+  "finance": {
+    "frequency": "Quarterly",
+    "reports": [
+      { "period": "Quarter 1, SY 2026-2027", "published": "2026-10-01", "type": "Financial Report" },
+      { "period": "Quarter 2, SY 2026-2027", "published": "2026-11-15", "type": "Financial Report" }
+    ]
+  },
+  "clubs": [
+    { "name": "Science Club", "cluster": "A" },
+    { "name": "English Club", "cluster": "A" },
+    { "name": "Ilocano Culture and Arts Club", "cluster": "B" },
+    { "name": "Chorale", "cluster": "B" },
+    { "name": "Sports Club", "cluster": "C" },
+    { "name": "YES-O", "cluster": "D" },
+    { "name": "Red Cross Youth", "cluster": "D" },
+    { "name": "Boy Scouts of the Philippines", "cluster": "D" },
+    { "name": "Girl Scouts of the Philippines", "cluster": "D" }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "slug": "stacruz",
+  "status": "demo",
+  "verified_on": null,
+  "updated": "2026-11-09",
+  "school": {
+    "name": "Sta. Cruz National High School",
+    "short": "SCNHS",
+    "school_id": "302876",
+    "division": "Cebu Province",
+    "region": "VII",
+    "region_name": "Central Visayas",
+    "cluster": "VI",
+    "address": "Sta. Cruz, Cebu"
+  },
+  "sslg": {
+    "term": "2026-2027",
+    "adviser": { "name": null, "position": "SSLG Adviser", "consent": false },
+    "contact": null,
+    "facebook": null,
+    "officers": [
+      { "role": "President", "grade": null, "name": null, "consent": false },
+      { "role": "Vice President", "grade": null, "name": null, "consent": false },
+      { "role": "Secretary", "grade": null, "name": null, "consent": false },
+      { "role": "Treasurer", "grade": null, "name": null, "consent": false },
+      { "role": "Auditor", "grade": null, "name": null, "consent": false },
+      { "role": "Public Information Officer", "grade": null, "name": null, "consent": false },
+      { "role": "Grade 7 Representative", "grade": 7, "name": null, "consent": false },
+      { "role": "Grade 9 Representative", "grade": 9, "name": null, "consent": false },
+      { "role": "Grade 11 Representative", "grade": 11, "name": null, "consent": false }
+    ]
+  },
+  "activities": [
+    { "id": "AP_SSLG_2026_001", "title": "Coastal Clean-Up Drive", "date": "2026-06-20", "status": "completed", "kind": "Program",
+      "summary": "Shoreline clean-up with the barangay council and the YES-O chapter.", "photo": null },
+    { "id": "AP_SSLG_2026_002", "title": "Intramurals 2026", "date": "2026-09-21", "status": "completed", "kind": "Program",
+      "summary": "Four-day school intramurals organized by the Sports, Health and Wellness Club.", "photo": null },
+    { "id": "AP_SSLG_2026_003", "title": "Bisaya Literary Festival", "date": "2026-10-15", "status": "completed", "kind": "Program",
+      "summary": "Cebuano poetry, essay and storytelling contest across all grade levels.", "photo": null },
+    { "id": "AP_SSLG_2026_004", "title": "Disaster Resilience Week", "date": "2026-11-06", "status": "planned", "kind": "Program",
+      "summary": "Drills, orientation and family preparedness kits distribution.", "photo": null }
+  ],
+  "documents": [
+    { "number": "001", "series": 2026, "type": "Resolution", "direction": "issued",
+      "title": "Adopting a Four-Cluster Scheme for School Clubs", "date": "2026-08-05" }
+  ],
+  "finance": {
+    "frequency": "Semi-annual",
+    "reports": [
+      { "period": "First Semester, SY 2026-2027", "published": "2026-10-20", "type": "Financial Report" }
+    ]
+  },
+  "clubs": [
+    { "name": "Science and Technology Club", "cluster": "A" },
+    { "name": "Mathematics Club", "cluster": "A" },
+    { "name": "Cebuano Literary Society", "cluster": "B" },
+    { "name": "Kulturang Pinoy Dance Troupe", "cluster": "B" },
+    { "name": "Sports, Health and Wellness Club", "cluster": "C" },
+    { "name": "YES-O", "cluster": "D" },
+    { "name": "Red Cross Youth", "cluster": "D" },
+    { "name": "Girl Scouts of the Philippines", "cluster": "D" }
+  ]
+}

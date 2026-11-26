@@ -1,0 +1,68 @@
+{
+  "slug": "sanisidro",
+  "status": "demo",
+  "verified_on": null,
+  "updated": "2026-11-18",
+  "school": {
+    "name": "San Isidro National High School",
+    "short": "SINHS",
+    "school_id": "301204",
+    "division": "Nueva Ecija",
+    "region": "III",
+    "region_name": "Central Luzon",
+    "cluster": "IV",
+    "address": "San Isidro, Nueva Ecija"
+  },
+  "sslg": {
+    "term": "2026-2027",
+    "adviser": { "name": "R. Salazar", "position": "SSLG Adviser", "consent": true },
+    "contact": null,
+    "facebook": null,
+    "officers": [
+      { "role": "President", "grade": null, "name": "A. Mercado", "consent": true },
+      { "role": "Vice President", "grade": null, "name": "J. Bautista", "consent": true },
+      { "role": "Secretary", "grade": null, "name": null, "consent": false },
+      { "role": "Treasurer", "grade": null, "name": "M. Ocampo", "consent": true },
+      { "role": "Auditor", "grade": null, "name": null, "consent": false },
+      { "role": "Public Information Officer", "grade": null, "name": "K. Villamor", "consent": true },
+      { "role": "Business Manager", "grade": null, "name": null, "consent": false },
+      { "role": "Grade 8 Representative", "grade": 8, "name": "L. Domingo", "consent": true },
+      { "role": "Grade 10 Representative", "grade": 10, "name": null, "consent": false },
+      { "role": "Grade 12 Representative", "grade": 12, "name": "P. Reyes", "consent": true }
+    ]
+  },
+  "activities": [
+    { "id": "AP_SSLG_2026_001", "title": "Brigada Eskwela 2026", "date": "2026-06-02", "status": "completed", "kind": "Program",
+      "summary": "Week-long bayanihan clean-up and repair drive with parents and barangay partners.", "photo": null },
+    { "id": "AP_SSLG_2026_002", "title": "Learner Leadership Summit", "date": "2026-08-14", "status": "completed", "kind": "Training",
+      "summary": "Two-day leadership summit for SSLG officers and club presidents.", "photo": null },
+    { "id": "AP_SSLG_2026_003", "title": "Project Basa", "date": "2026-09", "status": "ongoing", "kind": "Project",
+      "summary": "Weekly reading remediation for Grade 7 and 8 learners, run by the English and Filipino clubs.", "photo": null },
+    { "id": "AP_SSLG_2026_004", "title": "Teachers' Day 2026", "date": "2026-10-05", "status": "completed", "kind": "Ceremony",
+      "summary": "Tribute program and gift-giving for teaching and non-teaching personnel.", "photo": null }
+  ],
+  "documents": [
+    { "number": "001", "series": 2026, "type": "Memorandum", "direction": "issued",
+      "title": "Composition of the Learner Government Coordinating Council", "date": "2026-06-10" },
+    { "number": "002", "series": 2026, "type": "Memorandum", "direction": "issued",
+      "title": "Guidelines on Club Accreditation for SY 2026-2027", "date": "2026-07-01" }
+  ],
+  "finance": {
+    "frequency": "Quarterly",
+    "reports": [
+      { "period": "Quarter 1, SY 2026-2027", "published": "2026-10-02", "type": "Financial Report" }
+    ]
+  },
+  "clubs": [
+    { "name": "Science Club", "cluster": "A" },
+    { "name": "Mathematics Club", "cluster": "A" },
+    { "name": "English Club", "cluster": "A" },
+    { "name": "Makabayan Club", "cluster": "A" },
+    { "name": "Sayaw Filipiniana", "cluster": "B" },
+    { "name": "Rondalla", "cluster": "B" },
+    { "name": "Sports Club", "cluster": "C" },
+    { "name": "YES-O", "cluster": "D" },
+    { "name": "Red Cross Youth", "cluster": "D" },
+    { "name": "Boy Scouts of the Philippines", "cluster": "D" }
+  ]
+}

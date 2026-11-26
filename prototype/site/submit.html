@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submit a record — SSLG.ph</title>
+<meta name="description" content="File an SSLG record as a single JSON document, in the browser.">
+<meta name="theme-color" content="#02133e">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Montserrat:wght@700;800;900&amp;display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="topline"></div>
+<header class="topbar">
+  <div class="wrap">
+    <a class="wordmark" href="index.html">
+      <span class="mark">SG</span>
+      <span>SSLG.ph<small>Learner governments, in the open</small></span>
+    </a>
+    <nav class="nav"><a href="index.html">Home</a><a href="schools.html">Directory</a><a href="divisions.html">Divisions</a><a href="activities.html">Activities</a><a href="documents.html">Documents</a><a href="transparency.html">Transparency</a><a href="submit.html" class="on">Submit</a><a href="about.html">About</a></nav>
+  </div>
+</header>
+
+<section class="form-shell">
+  <div class="wrap">
+    <div class="form-head">
+      <div class="eyebrow">Submission</div>
+      <h1>File a record</h1>
+      <p>One form, one file. Fill this in and the page builds the JSON record that the registry
+         reads &mdash; the same shape as every school already published here. Nothing is uploaded;
+         the file is produced in your browser and you send it to your division.</p>
+    </div>
+
+    <div class="form-grid">
+      <form id="record-form" novalidate autocomplete="off">
+
+        <fieldset>
+          <legend>School</legend>
+          <div class="field">
+            <label for="f-name">School name <span class="req">*</span></label>
+            <input id="f-name" data-top="school.name" placeholder="Benigno S. Aquino National High School">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-short">Short name <span class="req">*</span></label>
+              <input id="f-short" data-top="school.short" placeholder="BSANHS">
+              <span class="hint">Used in the directory and page titles.</span>
+            </div>
+            <div class="field">
+              <label for="f-id">School ID <span class="req">*</span></label>
+              <input id="f-id" data-top="school.school_id" inputmode="numeric" placeholder="300981">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-division">Division <span class="req">*</span></label>
+              <input id="f-division" data-top="school.division" placeholder="Tarlac Province">
+            </div>
+            <div class="field">
+              <label for="f-region">Region <span class="req">*</span></label>
+              <select id="f-region" data-top="school.region">
+                <option value="">Select a region</option>
+                <option value="I">I &mdash; Ilocos Region</option><option value="II">II &mdash; Cagayan Valley</option><option value="III">III &mdash; Central Luzon</option><option value="IV-A">IV-A &mdash; CALABARZON</option><option value="IV-B">IV-B &mdash; MIMAROPA</option><option value="V">V &mdash; Bicol Region</option><option value="VI">VI &mdash; Western Visayas</option><option value="VII">VII &mdash; Central Visayas</option><option value="VIII">VIII &mdash; Eastern Visayas</option><option value="IX">IX &mdash; Zamboanga Peninsula</option><option value="X">X &mdash; Northern Mindanao</option><option value="XI">XI &mdash; Davao Region</option><option value="XII">XII &mdash; SOCCSKSARGEN</option><option value="XIII">XIII &mdash; Caraga</option><option value="NCR">NCR &mdash; National Capital Region</option><option value="CAR">CAR &mdash; Cordillera</option><option value="BARMM">BARMM &mdash; Bangsamoro</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-cluster">Federation cluster</label>
+              <input id="f-cluster" data-top="school.cluster" placeholder="IV">
+            </div>
+            <div class="field">
+              <label for="f-address">Town or city <span class="req">*</span></label>
+              <input id="f-address" data-top="school.address" placeholder="Concepcion, Tarlac">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Learner government</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-term">School year <span class="req">*</span></label>
+              <input id="f-term" data-top="sslg.term" placeholder="2026-2027">
+            </div>
+            <div class="field">
+              <label for="f-adviser">Adviser position</label>
+              <input id="f-adviser" data-top="sslg.adviser.position" value="SSLG Adviser">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-contact">Contact email</label>
+              <input id="f-contact" data-top="sslg.contact" type="email" placeholder="sslg@school.edu.ph">
+              <span class="hint">A shared mailbox, not a learner's personal address.</span>
+            </div>
+            <div class="field">
+              <label for="f-facebook">Facebook page</label>
+              <input id="f-facebook" data-top="sslg.facebook" placeholder="facebook.com/…">
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-roles">Officer roles, one per line</label>
+            <textarea id="f-roles" data-top="sslg.roles" rows="6">President
+Vice President
+Secretary
+Treasurer
+Auditor
+Public Information Officer
+Business Manager
+Sergeant-at-Arms
+Grade 7 Representative
+Grade 8 Representative
+Grade 9 Representative
+Grade 10 Representative
+Grade 11 Representative
+Grade 12 Representative</textarea>
+            <span class="hint">Roles only. Names are never collected here &mdash; they are added
+              later, by the adviser, against a signed consent form.</span>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Activities</legend>
+          <p class="hint" style="margin:-4px 0 14px">The activity records that already exist in your
+             ACRs and monitoring reports. Enter the ones filed this school year.</p>
+          <div class="repeat-list" data-list="activities"></div>
+          <button type="button" class="add-row" data-add="activities">+ Add an activity</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Issuances</legend>
+          <p class="hint" style="margin:-4px 0 14px">Memoranda and resolutions issued by the SSLG,
+             plus external issuances it received.</p>
+          <div class="repeat-list" data-list="documents"></div>
+          <button type="button" class="add-row" data-add="documents">+ Add a document</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Finance</legend>
+          <div class="field">
+            <label for="f-frequency">Stated publication frequency</label>
+            <select id="f-frequency" data-top="finance.frequency"><option>Monthly</option><option selected>Quarterly</option><option>Semestral</option><option>Annual</option></select>
+          </div>
+          <div class="repeat-list" data-list="reports"></div>
+          <button type="button" class="add-row" data-add="reports">+ Add a published report</button>
+          <p class="hint" style="margin-top:12px">Record the period and the date it was published.
+             The figures stay in the report itself; this page never republishes them.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Clubs</legend>
+          <p class="hint" style="margin:-4px 0 14px">Every recognized club and organization, with
+             one cluster each. Assignment is by primary purpose, at accreditation.</p>
+          <div class="repeat-list" data-list="clubs"></div>
+          <button type="button" class="add-row" data-add="clubs">+ Add a club</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Declaration</legend>
+          <div class="field">
+            <label style="display:flex;gap:9px;align-items:flex-start;text-transform:none;letter-spacing:0;font-family:var(--font-ui);font-size:.875rem;color:var(--ink-soft);font-weight:400">
+              <input type="checkbox" data-top="attest" style="width:auto;margin-top:3px">
+              <span>I am the SSLG adviser or an officer authorized by the adviser, and the
+                information in this record is true and drawn from documents on file.</span>
+            </label>
+          </div>
+          <p class="hint">A record submitted without this declaration is published as
+             <em>Demo</em> and is not indexed as a verified school.</p>
+        </fieldset>
+
+      </form>
+
+      <aside class="form-aside">
+        <div class="preview">
+          <div class="label">record.json &mdash; live</div>
+          <pre id="preview">{}</pre>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn primary" id="download">Download the record</button>
+          <button type="button" class="btn outline" id="copy">Copy JSON</button>
+          <button type="button" class="btn outline" id="example">Load an example</button>
+        </div>
+        <div class="status-msg" id="status"></div>
+        <div class="callout">
+          <h3>What happens next</h3>
+          <p>Send the file to your division's SSLG coordinator. The adviser attests to it, the
+             division confirms the school exists, and the record's status changes from
+             <em>Demo</em> to <em>Verified</em>. Until then it carries the amber badge.</p>
+        </div>
+        <div class="note">
+          <strong>This page has no server.</strong> Everything you type stays in this tab. Closing
+          it discards the draft &mdash; download the file first.
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<template id="tpl-activity">
+  <div class="repeat-row" data-repeat="activity">
+    <div class="row-head"><span>Activity</span><button type="button" data-remove>Remove</button></div>
+    <div class="grid-3">
+      <div class="field"><label>Title</label><input data-f="title" placeholder="Club Fair 2026"></div>
+      <div class="field"><label>Date</label><input data-f="date" type="date"></div>
+      <div class="field"><label>Kind</label><select data-f="kind"><option>Meeting</option><option>Program</option><option>Project</option><option>Ceremony</option><option>Competition</option><option>Outreach</option><option>Drill</option><option>Election</option><option>Planning</option><option>Training</option><option>Other</option></select></div>
+    </div>
+    <div class="grid-3" style="margin-top:12px">
+      <div class="field" style="grid-column:span 2"><label>Summary</label><input data-f="summary" placeholder="One sentence: what happened, who took part."></div>
+      <div class="field"><label>Status</label><select data-f="status"><option value="completed">Completed</option><option value="ongoing">Ongoing</option><option value="planned">Planned</option></select></div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-document">
+  <div class="repeat-row" data-repeat="document">
+    <div class="row-head"><span>Issuance</span><button type="button" data-remove>Remove</button></div>
+    <div class="grid-3">
+      <div class="field"><label>Number</label><input data-f="number" placeholder="001"></div>
+      <div class="field"><label>Series</label><input data-f="series" inputmode="numeric" placeholder="2026"></div>
+      <div class="field"><label>Type</label><select data-f="type"><option>Memorandum</option><option>Office Memorandum</option><option>Resolution</option><option>Division Memorandum</option><option>National Federation Memorandum</option><option>Other</option></select></div>
+    </div>
+    <div class="grid-3" style="margin-top:12px">
+      <div class="field" style="grid-column:span 2"><label>Title</label><input data-f="title" placeholder="Establishment of LGCC Standing Committees"></div>
+      <div class="field"><label>Date</label><input data-f="date" type="date"></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label>Direction</label><select data-f="direction"><option value="issued">Issued by this SSLG</option><option value="received">Received from a higher office</option></select></div>
+  </div>
+</template>
+
+<template id="tpl-report">
+  <div class="repeat-row" data-repeat="report">
+    <div class="row-head"><span>Published report</span><button type="button" data-remove>Remove</button></div>
+    <div class="grid-3">
+      <div class="field"><label>Period</label><input data-f="period" placeholder="Quarter 1, SY 2026-2027"></div>
+      <div class="field"><label>Published on</label><input data-f="published" type="date"></div>
+      <div class="field"><label>Document</label><input data-f="type" value="Financial Report"></div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-club">
+  <div class="repeat-row" data-repeat="club">
+    <div class="row-head"><span>Club</span><button type="button" data-remove>Remove</button></div>
+    <div class="grid-2">
+      <div class="field"><label>Name</label><input data-f="name" placeholder="Mathematics Club"></div>
+      <div class="field"><label>Cluster</label><select data-f="cluster"><option value="A">A &mdash; AGHAM</option><option value="B">B &mdash; SINING</option><option value="C">C &mdash; LAKAS</option><option value="D">D &mdash; BAYANIHAN</option></select></div>
+    </div>
+  </div>
+</template>
+
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="wordmark" href="index.html">
+          <span class="mark">SG</span>
+          <span>SSLG.ph<small>Learner governments, in the open</small></span>
+        </a>
+        <p>A shared registry and publishing standard for Supreme Secondary Learner Governments.
+           Built so that a school's records can be read, compared and trusted.</p>
+      </div>
+      <div>
+        <h4>Browse</h4>
+        <a href="schools.html">School directory</a>
+        <a href="divisions.html">Divisions</a>
+        <a href="activities.html">Activity feed</a>
+        <a href="documents.html">Issuances</a>
+        <a href="transparency.html">Transparency</a>
+      </div>
+      <div>
+        <h4>Standards</h4>
+        <a href="submit.html">Submit a record</a>
+        <a href="about.html">How it works</a>
+        <a href="about.html#privacy">Privacy rules</a>
+        <a href="about.html#verification">Verification</a>
+        <a href="about.html#schema">Record schema</a>
+      </div>
+      <div>
+        <h4>Prototype</h4>
+        <a href="about.html#status">What is real here</a>
+        <a href="about.html#plan">Rollout plan</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Prototype build, 24 November 2026. Not an official DepEd service.</span>
+      <span>Records marked <em>Demo</em> are synthetic and exist to test the layout.</span>
+    </div>
+  </div>
+</footer>
+<script src="assets/app.js"></script>
+<script src="assets/submit.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+  "slug": "bamban",
+  "status": "demo",
+  "verified_on": null,
+  "updated": "2026-11-16",
+  "school": {
+    "name": "Bamban National High School",
+    "short": "BANHS",
+    "school_id": "300983",
+    "division": "Tarlac Province",
+    "region": "III",
+    "region_name": "Central Luzon",
+    "cluster": "IV",
+    "address": "Bamban, Tarlac"
+  },
+  "sslg": {
+    "term": "2026-2027",
+    "adviser": { "name": null, "position": "SSLG Adviser", "consent": false },
+    "contact": null,
+    "facebook": null,
+    "officers": [
+      { "role": "President", "grade": null, "name": null, "consent": false },
+      { "role": "Vice President", "grade": null, "name": null, "consent": false },
+      { "role": "Secretary", "grade": null, "name": null, "consent": false },
+      { "role": "Treasurer", "grade": null, "name": null, "consent": false },
+      { "role": "Auditor", "grade": null, "name": null, "consent": false },
+      { "role": "Grade 8 Representative", "grade": 8, "name": null, "consent": false },
+      { "role": "Grade 11 Representative", "grade": 11, "name": null, "consent": false }
+    ]
+  },
+  "activities": [
+    { "id": "AP_SSLG_2026_001", "title": "Brigada Eskwela 2026", "date": "2026-06-03", "status": "completed", "kind": "Program",
+      "summary": "Clean-up of classrooms and repainting of the covered court with parent volunteers.", "photo": null },
+    { "id": "AP_SSLG_2026_002", "title": "Club Fair 2026", "date": "2026-06-19", "status": "completed", "kind": "Program",
+      "summary": "Recruitment fair for seven recognized clubs, with booths grouped by cluster.", "photo": null },
+    { "id": "AP_SSLG_2026_003", "title": "Disaster Resilience Week", "date": "2026-07-14", "status": "completed", "kind": "Drill",
+      "summary": "Earthquake and fire drills with a family preparedness kit distribution.", "photo": null },
+    { "id": "AP_SSLG_2026_004", "title": "Project Tanim: School Garden", "date": "2026-09", "status": "ongoing", "kind": "Project",
+      "summary": "Vegetable garden behind the science building, maintained by the YES-O chapter.", "photo": null }
+  ],
+  "documents": [
+    { "number": "001", "series": 2026, "type": "Memorandum", "direction": "issued",
+      "title": "Guidelines on Club Accreditation for SY 2026-2027", "date": "2026-07-02" }
+  ],
+  "finance": {
+    "frequency": "Quarterly",
+    "reports": []
+  },
+  "clubs": [
+    { "name": "Science Club", "cluster": "A" },
+    { "name": "Mathematics Club", "cluster": "A" },
+    { "name": "English Club", "cluster": "A" },
+    { "name": "Rondalla", "cluster": "B" },
+    { "name": "Sports Club", "cluster": "C" },
+    { "name": "YES-O", "cluster": "D" },
+    { "name": "Red Cross Youth", "cluster": "D" }
+  ]
+}

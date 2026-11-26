@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — SSLG.ph</title>
+<meta name="description" content="">
+<meta name="theme-color" content="#02133e">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Montserrat:wght@700;800;900&amp;display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="topline"></div>
+<header class="topbar">
+  <div class="wrap">
+    <a class="wordmark" href="index.html">
+      <span class="mark">SG</span>
+      <span>SSLG.ph<small>Learner governments, in the open</small></span>
+    </a>
+    <nav class="nav"><a href="index.html">Home</a><a href="schools.html">Directory</a><a href="divisions.html">Divisions</a><a href="activities.html">Activities</a><a href="documents.html">Documents</a><a href="transparency.html">Transparency</a><a href="submit.html">Submit</a><a href="about.html" class="on">About</a></nav>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap narrow">
+    <div class="eyebrow">About</div>
+    <h1 style="font-size:2.2rem;margin-bottom:14px">What this is</h1>
+    <p style="font-size:1.0625rem;color:var(--ink-soft)">A prototype of a national registry and
+       publishing standard for Supreme Secondary Learner Governments. One record per school
+       produces one public site; the same records produce the directory, the activity feed, the
+       issuance index and the transparency table.</p>
+    <p style="color:var(--ink-soft)">It is modelled on BetterGov.ph: a volunteer-run, open-source
+       portal built on a shared schema and a public repository, where the value is the
+       consistency of the data rather than the design of any one page.</p>
+    <p style="color:var(--ink-soft)">Records arrive through a form that runs in the browser
+       (<a href="submit.html">Submit</a>). It validates the fields, shows the JSON as it is
+       built, and downloads one file. Nothing is uploaded and no account is required; the
+       school sends the file to its division.</p>
+
+    <h2 id="status" style="margin-top:40px;font-size:1.375rem">What is real in this prototype</h2>
+    <div class="table-wrap" style="margin-top:16px">
+      <table class="data">
+        <thead><tr><th>Item</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>The 7-school registry, directory, feed and transparency views</td><td>Working code, generated from JSON</td></tr>
+          <tr><td>The division roll-up at <a href="divisions.html">Divisions</a></td><td>Generated from the same records; no extra fields, no division spreadsheet</td></tr>
+          <tr><td>The submission form at <a href="submit.html">Submit</a></td><td>Working code. Validates, previews and downloads the record in the browser</td></tr>
+          <tr><td>BSANHS record: activities, dates, memoranda, 20 clubs and clusters</td><td>Drawn from the school's own vault records</td></tr>
+          <tr><td>The 6 other school records</td><td>Synthetic, marked <em>Demo record</em></td></tr>
+          <tr><td>Officer names</td><td>Withheld everywhere except one demo record, to show the consent rule</td></tr>
+          <tr><td>Finance figures</td><td>Not shown. Only the fact and date of publication</td></tr>
+          <tr><td>Photographs</td><td>Six real school photographs from the SSLG photo folder</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="privacy" style="margin-top:40px;font-size:1.375rem">Privacy rules</h2>
+    <p style="color:var(--ink-soft)">The officers of an SSLG are learners, which puts this
+       platform under the Data Privacy Act of 2012 and the DepEd data privacy manual in a way
+       that a government directory of adult officials is not.</p>
+    <ul style="color:var(--ink-soft);padding-left:20px">
+      <li>Roles are public. Names are not.</li>
+      <li>A name renders only when a signed consent form is recorded against it.</li>
+      <li>No section names, no learner addresses, no personal mobile numbers.</li>
+      <li>No photograph of an identifiable learner without consent; event and document images
+          are preferred.</li>
+      <li>A school can withdraw its record at any time, and the page goes down with it.</li>
+    </ul>
+
+    <h2 id="verification" style="margin-top:40px;font-size:1.375rem">Verification</h2>
+    <p style="color:var(--ink-soft)">A record is published as <em>Verified</em> only after the
+       adviser attests to it and the division confirms the school exists. Until then it carries
+       a <em>Demo record</em> badge, which is visible on every page it touches. Without this
+       step the platform would be a spoofing tool with a DepEd-shaped logo on it.</p>
+
+    <h2 id="schema" style="margin-top:40px;font-size:1.375rem">The record</h2>
+    <p style="color:var(--ink-soft)">One JSON file per school, six blocks:</p>
+    <div class="table-wrap" style="margin-top:16px">
+      <table class="data">
+        <thead><tr><th>Block</th><th>Holds</th></tr></thead>
+        <tbody>
+          <tr><td><code>school</code></td><td>Name, school ID, division, region, cluster, address</td></tr>
+          <tr><td><code>sslg</code></td><td>Term, adviser, officers, contact</td></tr>
+          <tr><td><code>activities</code></td><td>ID, title, date, status, kind, summary, photo</td></tr>
+          <tr><td><code>documents</code></td><td>Number, series, type, direction, title, date</td></tr>
+          <tr><td><code>finance</code></td><td>Frequency, published reports</td></tr>
+          <tr><td><code>clubs</code></td><td>Name and cluster</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="plan" style="margin-top:40px;font-size:1.375rem">Rollout</h2>
+    <div class="table-wrap" style="margin-top:16px">
+      <table class="data">
+        <thead><tr><th>Phase</th><th>Scope</th><th>Test of success</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Schema, generator, BSANHS as record #1</td><td>This prototype</td></tr>
+          <tr><td>1</td><td>Five schools in one division, records collected by form</td><td>Five verified records, no manual HTML</td></tr>
+          <tr><td>2</td><td>Division endorsement, adviser attestation flow</td><td>A record can be verified without emailing you</td></tr>
+          <tr><td>3</td><td>Cluster and regional federation roll-up</td><td>One screen per division, one per region</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note" style="margin-top:36px">
+      <strong>This build is a demonstration.</strong> The registry, the generator and the
+      privacy rules are real. The 6 synthetic school records exist to show what a populated
+      directory looks like, and are labelled as such on every page.
+    </div>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="wordmark" href="index.html">
+          <span class="mark">SG</span>
+          <span>SSLG.ph<small>Learner governments, in the open</small></span>
+        </a>
+        <p>A shared registry and publishing standard for Supreme Secondary Learner Governments.
+           Built so that a school's records can be read, compared and trusted.</p>
+      </div>
+      <div>
+        <h4>Browse</h4>
+        <a href="schools.html">School directory</a>
+        <a href="divisions.html">Divisions</a>
+        <a href="activities.html">Activity feed</a>
+        <a href="documents.html">Issuances</a>
+        <a href="transparency.html">Transparency</a>
+      </div>
+      <div>
+        <h4>Standards</h4>
+        <a href="submit.html">Submit a record</a>
+        <a href="about.html">How it works</a>
+        <a href="about.html#privacy">Privacy rules</a>
+        <a href="about.html#verification">Verification</a>
+        <a href="about.html#schema">Record schema</a>
+      </div>
+      <div>
+        <h4>Prototype</h4>
+        <a href="about.html#status">What is real here</a>
+        <a href="about.html#plan">Rollout plan</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Prototype build, 24 November 2026. Not an official DepEd service.</span>
+      <span>Records marked <em>Demo</em> are synthetic and exist to test the layout.</span>
+    </div>
+  </div>
+</footer>
+<script src="assets/app.js"></script>
+<script src="assets/submit.js"></script>
+</body>
+</html>
